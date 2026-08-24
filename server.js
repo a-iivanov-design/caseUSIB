@@ -153,6 +153,15 @@ async function verifyAdminByTelegramUser(telegramUser) {
   };
 }
 
+// Роуты для пинга и проверки работоспособности (чтобы UptimeRobot не выдавал 502)
+app.get('/', (req, res) => {
+  res.send('Case Lounge Server is active and running!');
+});
+
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
 app.get('/api/status', authMiddleware, async (req, res) => {
   try {
     const userId = String(req.telegramUser.id);
@@ -572,6 +581,7 @@ app.post('/api/admin/remove-admin', authMiddleware, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+// ОБЯЗАТЕЛЬНО добавлено '0.0.0.0', чтобы Render принимал внешние запросы и не было ошибки 502
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
