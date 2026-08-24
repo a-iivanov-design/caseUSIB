@@ -947,7 +947,7 @@
                     const deleteBtn = document.createElement('button');
                     deleteBtn.type = 'button';
                     deleteBtn.innerText = 'Удалить';
-                    deleteBtn.onclick = () => deleteInventoryItem(item.id);
+                    deleteBtn.onclick = () => deleteInventoryItem(item.id, card);
 
                     card.appendChild(infoDiv);
                     card.appendChild(deleteBtn);
@@ -958,7 +958,7 @@
             }
         }
 
-        async function deleteInventoryItem(itemId) {
+        async function deleteInventoryItem(itemId, cardElement) {
             if (!confirm('Удалить приз?')) return;
             try {
                 const res = await fetch('/api/inventory/delete', {
@@ -971,7 +971,14 @@
                     alert(data.error); 
                     return; 
                 }
-                loadInventory();
+                if (cardElement) {
+                    cardElement.style.transition = 'all 0.3s ease';
+                    cardElement.style.opacity = '0';
+                    cardElement.style.transform = 'scale(0.9)';
+                    setTimeout(() => cardElement.remove(), 300);
+                } else {
+                    loadInventory();
+                }
             } catch (err) { 
                 alert('Ошибка удаления'); 
             }
