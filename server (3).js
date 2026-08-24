@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Токен вашего Telegram бота (необходимо для безопасной проверки initData)
 // Укажите токен прямо здесь или передайте через переменную окружения BOT_TOKEN
-const BOT_TOKEN = process.env.BOT_TOKEN || '8856806297:AAGtOp7HzfMel2Qrn26FDZjTdt-Tm-yBrhY';
+const BOT_TOKEN = process.env.BOT_TOKEN || '8858536573:AAEMimZ3ynfL9Z_4IJT-57JOlcecACWmye4';
 
 const db = createClient({
   url: process.env.TURSO_DATABASE_URL || 'file:local.db',
