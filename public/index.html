@@ -93,27 +93,26 @@
             box-shadow: 0 8px 24px rgba(245, 166, 35, 0.15), inset 0 1px 1px rgba(255,255,255,0.2);
         }
 
-        .header-logo-container {
+       .header-logo-container {
             width: 160px;
             height: 74px;
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
+            background: transparent; /* Убрали фон */
+            backdrop-filter: none; /* Убрали размытие */
+            -webkit-backdrop-filter: none;
+            border: none; /* Убрали рамку */
+            border-radius: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            padding: 6px 12px;
+            padding: 0; /* Убрали отступы, если они мешают */
             box-sizing: border-box;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+            box-shadow: none; /* Убрали тени */
             z-index: 20;
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
         }
-
         .club-logo-img {
             max-height: 60px;
             max-width: 100%;
