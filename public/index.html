@@ -75,7 +75,7 @@
         }
 
         .header-logo-container {
-            width: 150px;
+            width: 180px;
             height: 64px;
             background: transparent;
             display: flex;
@@ -89,7 +89,7 @@
         }
 
         .club-logo-img {
-            max-height: 48px;
+            max-height: 52px;
             max-width: 100%;
             object-fit: contain;
             filter: drop-shadow(0 2px 12px rgba(0,0,0,0.4));
@@ -249,6 +249,9 @@
             font-size: 32px;
             margin-bottom: 8px;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .prize-icon-wrap img {
             width: 38px;
@@ -548,7 +551,7 @@
             position: absolute;
             top: calc(100% + 6px);
             right: 0;
-            width: 190px;
+            width: 210px;
             background: rgba(14, 16, 22, 0.98);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
@@ -746,7 +749,7 @@
                     <button class="admin-dropdown-item" id="subtab-users" onclick="switchAdminSub('users')">👥 Игроки</button>
                     <button class="admin-dropdown-item" id="subtab-admins" onclick="switchAdminSub('admins')">🔑 Админы</button>
                     <button class="admin-dropdown-item" id="subtab-logs" onclick="switchAdminSub('logs')">📜 Логи админов</button>
-                    <button class="admin-dropdown-item" id="subtab-background" onclick="switchAdminSub('background')">🖼️ Фон и кейс</button>
+                    <button class="admin-dropdown-item" id="subtab-background" onclick="switchAdminSub('background')">🖼️ Дизайн и Логотип</button>
                 </div>
             </div>
         </div>
@@ -806,7 +809,6 @@
             <div class="admin-list" id="admins-list-container" style="width: 100%;"></div>
         </div>
 
-        <!-- РАЗДЕЛ ЛОГОВ АДМИНОВ -->
         <div id="admin-sub-logs" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
             <button class="spin-btn" style="padding: 10px; font-size: 11px; margin-bottom: 8px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="loadAdminLogs()">🔄 Обновить логи</button>
             <div class="admin-list" id="admin-logs-list" style="width: 100%;">
@@ -816,6 +818,16 @@
 
         <div id="admin-sub-background" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
             <div class="add-prize-form" style="margin-top:0;">
+                <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Логотип клуба (картинка)</div>
+                <input type="file" id="logo-file-input" accept="image/*" style="display: none;" handleLogoUpload(event) onchange="handleLogoUpload(event)">
+                <button class="spin-btn" style="padding: 11px; font-size: 11px; margin-bottom: 6px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="document.getElementById('logo-file-input').click()">📁 Загрузить файл логотипа</button>
+                <input type="text" id="logo-url-input" placeholder="Или прямая ссылка на логотип" autocomplete="off">
+                <button class="spin-btn" style="padding: 11px; font-size: 11px; margin-top: 4px; margin-bottom: 12px;" onclick="applyClubLogoImage()">Установить логотип-картинку</button>
+
+                <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Название клуба (вместо Case Lounge)</div>
+                <input type="text" id="logo-text-input" placeholder="Например: CYBER <span>CLUB</span>" autocomplete="off">
+                <button class="spin-btn" style="padding: 11px; font-size: 11px; margin-top: 4px; margin-bottom: 12px;" onclick="applyClubLogoText()">Установить текст логотипа</button>
+
                 <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Фон главной страницы</div>
                 <input type="file" id="bg-file-input" accept="image/*" style="display: none;" onchange="handleBgUpload(event)">
                 <button class="spin-btn" style="padding: 11px; font-size: 11px; margin-bottom: 6px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="document.getElementById('bg-file-input').click()">📁 Загрузить файл фона</button>
@@ -873,9 +885,9 @@
                 const res = await fetch('/api/settings');
                 const settings = await res.json();
                 
+                // 1. Фон страницы
                 const savedBg = settings.homeBackground || (window.APP_CONFIG && window.APP_CONFIG.homeBackground);
                 const caseSection = document.getElementById('section-case');
-                
                 if (savedBg && savedBg.trim() !== '') {
                     caseSection.style.backgroundImage = `url('${savedBg}')`;
                     caseSection.classList.add('has-custom-bg');
@@ -884,6 +896,7 @@
                     caseSection.classList.remove('has-custom-bg');
                 }
 
+                // 2. Иконка кейса
                 const savedCase = settings.caseImage || (window.APP_CONFIG && window.APP_CONFIG.caseImage);
                 const caseIconContainer = document.getElementById('case-preview-icon');
                 if (savedCase) {
@@ -891,6 +904,23 @@
                         caseIconContainer.innerHTML = `<img src="${savedCase}" alt="Case">`;
                     } else {
                         caseIconContainer.innerText = savedCase;
+                    }
+                }
+
+                // 3. Логотип клуба (картинка или текст)
+                const savedLogoImg = settings.clubLogoImage;
+                const savedLogoText = settings.clubLogoText;
+                const logoBox = document.getElementById('header-logo-box');
+
+                if (savedLogoImg && savedLogoImg.trim() !== '') {
+                    logoBox.innerHTML = `<img src="${savedLogoImg}" class="club-logo-img" alt="Logo" onerror="this.outerHTML='<div class=\'club-logo-text\'>CASE <span>LOUNGE</span></div>'">`;
+                } else if (savedLogoText && savedLogoText.trim() !== '') {
+                    logoBox.innerHTML = `<div class="club-logo-text">${savedLogoText}</div>`;
+                } else if (window.APP_CONFIG) {
+                    if (window.APP_CONFIG.clubLogoImage) {
+                        logoBox.innerHTML = `<img src="${window.APP_CONFIG.clubLogoImage}" class="club-logo-img" alt="Logo">`;
+                    } else if (window.APP_CONFIG.clubLogoText) {
+                        logoBox.innerHTML = `<div class="club-logo-text">${window.APP_CONFIG.clubLogoText}</div>`;
                     }
                 }
             } catch (e) {
@@ -902,13 +932,6 @@
 
         if (window.APP_CONFIG) {
             const cfg = window.APP_CONFIG;
-            const logoBox = document.getElementById('header-logo-box');
-            if (cfg.clubLogoImage) {
-                logoBox.innerHTML = `<img src="${cfg.clubLogoImage}" class="club-logo-img" alt="Logo" onerror="this.outerHTML='<div class=\'club-logo-text\'>${cfg.clubLogoText || 'CASE <span>LOUNGE</span>'}</div>'">`;
-            } else if (cfg.clubLogoText) {
-                logoBox.innerHTML = `<div class="club-logo-text">${cfg.clubLogoText}</div>`;
-            }
-
             const root = document.documentElement;
             if (cfg.primaryColor) {
                 root.style.setProperty('--primary', cfg.primaryColor);
@@ -1069,7 +1092,7 @@
                 'users': '👥 Игроки',
                 'admins': '🔑 Админы',
                 'logs': '📜 Логи админов',
-                'background': '🖼️ Фон и кейс'
+                'background': '🖼️ Дизайн и Логотип'
             };
             const titleEl = document.getElementById('current-admin-title');
             if (titleEl && titles[sub]) titleEl.innerText = titles[sub];
@@ -1087,6 +1110,31 @@
             if (sub === 'users') loadAllUsers();
             if (sub === 'admins') loadAdminsList();
             if (sub === 'logs') loadAdminLogs();
+        }
+
+        async function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Image = e.target.result;
+                try {
+                    const res = await fetch('/api/admin/upload-image', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ image: base64Image, filename: file.name })
+                    });
+                    const data = await res.json();
+                    if (data.error) { alert(data.error); return; }
+                    document.getElementById('logo-url-input').value = data.url;
+                    alert('Логотип загружен! Нажмите «Установить логотип-картинку».');
+                } catch (err) {
+                    console.error(err);
+                    alert('Ошибка загрузки файла');
+                }
+            };
+            reader.readAsDataURL(file);
         }
 
         async function handleBgUpload(event) {
@@ -1164,10 +1212,72 @@
             reader.readAsDataURL(file);
         }
 
+        async function applyClubLogoImage() {
+            const url = document.getElementById('logo-url-input').value.trim();
+            if (!url) {
+                alert('Введите ссылку или выберите файл логотипа');
+                return;
+            }
+
+            try {
+                // Стираем текстовый логотип и сохраняем картинку
+                await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ key: 'clubLogoText', value: '' })
+                });
+
+                const res = await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ key: 'clubLogoImage', value: url })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+
+                loadAppSettings();
+                alert('Логотип клуба успешно изменен для всех пользователей!');
+            } catch (err) {
+                console.error(err);
+                alert('Ошибка сохранения логотипа');
+            }
+        }
+
+        async function applyClubLogoText() {
+            const textVal = document.getElementById('logo-text-input').value.trim();
+            if (!textVal) {
+                alert('Введите текст логотипа');
+                return;
+            }
+
+            try {
+                // Стираем картинку логотипа и сохраняем текст
+                await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ key: 'clubLogoImage', value: '' })
+                });
+
+                const res = await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ key: 'clubLogoText', value: textVal })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+
+                loadAppSettings();
+                alert('Текст логотипа клуба успешно изменен для всех пользователей!');
+            } catch (err) {
+                console.error(err);
+                alert('Ошибка сохранения текста логотипа');
+            }
+        }
+
         async function applyBackground() {
             const url = document.getElementById('bg-url-input').value.trim();
             if (!url) {
-                alert('Введите ссылку или выберите файл');
+                alert('Введите ссылку или выберите файл фона');
                 return;
             }
 
