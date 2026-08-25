@@ -582,6 +582,37 @@ app.post('/api/admin/remove-admin', authMiddleware, async (req, res) => {
   }
 });
 
+import fs from 'fs';
+
+// Создаем папку uploads, если её нет
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Эндпоинт для загрузки фонового изображения
+app.post('/api/admin/upload-background', authMiddleware, async (req, res) => {
+  try {
+    const admin = await verifyAdminByTelegramUser(req.telegramUser);
+    if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
+
+    const { image, filename } = req.body;
+    if (!image) return res.status(400).json({ error: 'No image provided' });
+
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+    const ext = filename ? path.extname(filename) : '.jpg';
+    const uniqueName = `bg_${Date.now()}${ext}`;
+    const filePath = path.join(uploadsDir, uniqueName);
+
+    fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+
+    res.json({ success: true, url: `/uploads/${uniqueName}` });
+  } catch (e) {
+    console.error('Upload Error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
