@@ -152,6 +152,7 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            background-attachment: fixed;
             border-radius: 16px;
             position: relative;
         }
@@ -789,6 +790,7 @@
         </div>
 
         <div id="admin-sub-stats" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1;">
+            <button class="spin-btn" style="padding: 10px; font-size: 11px; margin-bottom: 8px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="loadStats()">🔄 Обновить статистику</button>
             <div class="stats-grid" id="stats-content">
                 <div style="text-align:center; color:var(--text-muted); font-size:12px; padding:20px;">Загрузка...</div>
             </div>
@@ -923,6 +925,7 @@
         let isSuperAdmin = false;
         let isAdminUser = false;
         let isPrizesLoadedOnce = false;
+        let statsInterval = null;
 
         async function checkUserStatus() {
             const btn = document.getElementById('action-button');
@@ -946,7 +949,9 @@
                     btn.innerText = 'ОТКРЫТЬ КЕЙС';
                     msg.innerText = '';
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error('Status check error:', e);
+            }
         }
 
         async function checkAdminAccess() {
@@ -958,7 +963,9 @@
                     isSuperAdmin = data.isSuper;
                     document.getElementById('admin-entry-btn').style.display = 'flex';
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error('Admin check error:', e);
+            }
         }
 
         checkAdminAccess();
@@ -972,6 +979,11 @@
             const bottomNav = document.getElementById('bottom-nav-toggle');
             const adminEntryBtn = document.getElementById('admin-entry-btn');
             const exitAdminBtn = document.getElementById('exit-admin-btn');
+
+            if (statsInterval) {
+                clearInterval(statsInterval);
+                statsInterval = null;
+            }
 
             if (tab === 'case') {
                 document.getElementById('section-case').classList.add('active');
@@ -1058,7 +1070,15 @@
             const titleEl = document.getElementById('current-admin-title');
             if (titleEl && titles[sub]) titleEl.innerText = titles[sub];
 
-            if (sub === 'stats') loadStats();
+            if (statsInterval) {
+                clearInterval(statsInterval);
+                statsInterval = null;
+            }
+
+            if (sub === 'stats') {
+                loadStats();
+                statsInterval = setInterval(loadStats, 5000); // Автообновление каждые 5 секунд
+            }
             if (sub === 'ban') loadBannedUsers();
             if (sub === 'users') loadAllUsers();
             if (sub === 'admins') loadAdminsList();
@@ -1085,7 +1105,8 @@
                     document.getElementById('bg-url-input').value = data.url;
                     alert('Картинка успешно загружена! Нажмите «Установить фон».');
                 } catch (err) {
-                    alert('Ошибка загрузки файла');
+                    console.error('Background upload network error:', err);
+                    alert('Ошибка загрузки файла (проблема сети)');
                 }
             };
             reader.readAsDataURL(file);
@@ -1172,6 +1193,7 @@
                     listEl.appendChild(card);
                 });
             } catch (e) {
+                console.error('Inventory load network error:', e);
                 listEl.innerHTML = '<div style="text-align: center; color: var(--secondary);">Ошибка загрузки</div>';
             }
         }
@@ -1204,7 +1226,8 @@
                     loadInventory();
                 }
             } catch (err) { 
-                alert('Ошибка удаления'); 
+                console.error('Inventory delete network error:', err);
+                alert('Ошибка удаления (проблема сети)'); 
             }
         }
 
@@ -1243,15 +1266,17 @@
                         }
                     });
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error('Admin prizes load network error:', e);
+            }
         }
 
         async function loadStats() {
             const statsBox = document.getElementById('stats-content');
-            statsBox.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:20px;">Загрузка...</div>';
             try {
                 const res = await fetch(`/api/admin/stats`, { headers: getAuthHeaders() });
                 const data = await res.json();
+                if (data.error) throw new Error(data.error);
                 statsBox.innerHTML = `
                     <div class="stat-card">
                         <div class="stat-card-info">
@@ -1281,7 +1306,10 @@
                         </div>
                     </div>
                 `;
-            } catch (e) { statsBox.innerHTML = '<div style="text-align:center; color:var(--secondary); font-size:12px;">Ошибка загрузки статистики</div>'; }
+            } catch (e) { 
+                console.error('Stats load network error:', e);
+                statsBox.innerHTML = '<div style="text-align:center; color:var(--secondary); font-size:12px;">Ошибка загрузки статистики</div>'; 
+            }
         }
 
         async function loadBannedUsers() {
@@ -1302,7 +1330,9 @@
                     card.innerHTML = `<div>${displayName}</div><button type="button" style="background:var(--card-bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="quickUnban('${u.id}')">Разбан</button>`;
                     listEl.appendChild(card);
                 });
-            } catch (e) {}
+            } catch (e) {
+                console.error('Banned list load network error:', e);
+            }
         }
 
         async function loadAllUsers() {
@@ -1347,42 +1377,59 @@
                     `;
                     listEl.appendChild(card);
                 });
-            } catch (e) {}
+            } catch (e) {
+                console.error('All users load network error:', e);
+            }
         }
 
         async function actionUserBan(targetIdentifier, banState) {
-            const res = await fetch('/api/admin/ban', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ targetIdentifier, banState })
-            });
-            const data = await res.json();
-            if (data.error) { alert(data.error); return; }
-            alert(banState === 1 ? 'Пользователь заблокирован' : 'Пользователь разблокирован');
-            loadAllUsers();
+            try {
+                const res = await fetch('/api/admin/ban', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier, banState })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                alert(banState === 1 ? 'Пользователь заблокирован' : 'Пользователь разблокирован');
+                loadAllUsers();
+            } catch (e) {
+                console.error('Action ban network error:', e);
+                alert('Ошибка сети при попытке изменения бана');
+            }
         }
 
         async function actionResetTimer(targetIdentifier) {
-            const res = await fetch('/api/admin/reset-timer', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ targetIdentifier })
-            });
-            const data = await res.json();
-            if (data.error) { alert(data.error); return; }
-            alert('Таймер открытия кейса сброшен');
+            try {
+                const res = await fetch('/api/admin/reset-timer', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                alert('Таймер открытия кейса сброшен');
+            } catch (e) {
+                console.error('Reset timer network error:', e);
+                alert('Ошибка сети при сбросе таймера');
+            }
         }
 
         async function actionMakeAdmin(targetIdentifier) {
             if (!isSuperAdmin) return alert('Только главный администратор может назначать других админов');
-            const res = await fetch('/api/admin/add-admin', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ targetIdentifier })
-            });
-            const data = await res.json();
-            if (data.error) { alert(data.error); return; }
-            alert(`Пользователь успешно назначен администратором`);
+            try {
+                const res = await fetch('/api/admin/add-admin', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                alert(`Пользователь успешно назначен администратором`);
+            } catch (e) {
+                console.error('Make admin network error:', e);
+                alert('Ошибка сети при назначении администратора');
+            }
         }
 
         async function loadAdminsList() {
@@ -1404,64 +1451,89 @@
                     card.innerHTML = `<div>${displayName} ${adm.is_super ? '(Супер)' : ''}</div>${actionBtn}`;
                     listEl.appendChild(card);
                 });
-            } catch (e) {}
+            } catch (e) {
+                console.error('Admins list load network error:', e);
+            }
         }
 
         async function setBanStatus(banState) {
             const targetIdentifier = document.getElementById('ban-username').value;
             if (!targetIdentifier) return;
-            const res = await fetch('/api/admin/ban', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ targetIdentifier, banState })
-            });
-            const data = await res.json();
-            if (data.error) { alert(data.error); return; }
-            alert('Готово');
-            loadBannedUsers();
+            try {
+                const res = await fetch('/api/admin/ban', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier, banState })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                alert('Готово');
+                loadBannedUsers();
+            } catch (e) {
+                console.error('Set ban status network error:', e);
+                alert('Ошибка сети');
+            }
         }
 
         async function resetTimer() {
             const targetIdentifier = document.getElementById('ban-username').value;
             if (!targetIdentifier) return;
-            await fetch('/api/admin/reset-timer', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ targetIdentifier })
-            });
-            alert('Таймер сброшен');
+            try {
+                await fetch('/api/admin/reset-timer', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier })
+                });
+                alert('Таймер сброшен');
+            } catch (e) {
+                console.error('Reset timer network error:', e);
+                alert('Ошибка сети');
+            }
         }
 
         async function quickUnban(targetIdentifier) {
-            await fetch('/api/admin/ban', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ targetIdentifier, banState: 0 })
-            });
-            loadBannedUsers();
+            try {
+                await fetch('/api/admin/ban', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier, banState: 0 })
+                });
+                loadBannedUsers();
+            } catch (e) {
+                console.error('Quick unban network error:', e);
+            }
         }
 
         async function deleteUser(targetIdentifier) {
             if (!confirm(`Удалить пользователя (${targetIdentifier})?`)) return;
-            const res = await fetch('/api/admin/delete-user', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ targetIdentifier })
-            });
-            const data = await res.json();
-            if (data.error) { alert(data.error); return; }
-            loadAllUsers();
+            try {
+                const res = await fetch('/api/admin/delete-user', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                loadAllUsers();
+            } catch (e) {
+                console.error('Delete user network error:', e);
+                alert('Ошибка сети при удалении пользователя');
+            }
         }
 
         async function updateWeight(prizeId) {
             const input = document.getElementById(`weight-${prizeId}`);
             if (!input) return;
             const weight = Number(input.value);
-            await fetch('/api/admin/update-prize', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ prizeId: Number(prizeId), weight })
-            });
+            try {
+                await fetch('/api/admin/update-prize', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ prizeId: Number(prizeId), weight })
+                });
+            } catch (e) {
+                console.error('Update weight network error:', e);
+            }
         }
 
         async function addPrize() {
@@ -1479,53 +1551,73 @@
 
             if (!name || !weight) return alert('Укажите название и шанс');
 
-            await fetch('/api/admin/add-prize', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ name, icon, rarity, weight, promo_prefix })
-            });
-            
-            nameEl.value = '';
-            iconEl.value = '';
-            rarityEl.value = '';
-            weightEl.value = '';
-            promoEl.value = '';
+            try {
+                await fetch('/api/admin/add-prize', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ name, icon, rarity, weight, promo_prefix })
+                });
+                
+                nameEl.value = '';
+                iconEl.value = '';
+                rarityEl.value = '';
+                weightEl.value = '';
+                promoEl.value = '';
 
-            switchAdminSub('prizes');
-            loadAdminPrizes();
+                switchAdminSub('prizes');
+                loadAdminPrizes();
+            } catch (e) {
+                console.error('Add prize network error:', e);
+                alert('Ошибка сети при добавлении приза');
+            }
         }
 
         async function deletePrize(prizeId) {
             if (!confirm('Удалить приз?')) return;
-            await fetch('/api/admin/delete-prize', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ prizeId: Number(prizeId) })
-            });
-            loadAdminPrizes();
+            try {
+                await fetch('/api/admin/delete-prize', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ prizeId: Number(prizeId) })
+                });
+                loadAdminPrizes();
+            } catch (e) {
+                console.error('Delete prize network error:', e);
+                alert('Ошибка сети при удалении приза');
+            }
         }
 
         async function addNewAdmin() {
             const targetIdentifier = document.getElementById('new-admin-username').value;
             if (!targetIdentifier) return;
-            await fetch('/api/admin/add-admin', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ targetIdentifier })
-            });
-            alert('Админ добавлен');
-            document.getElementById('new-admin-username').value = '';
-            loadAdminsList();
+            try {
+                await fetch('/api/admin/add-admin', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier })
+                });
+                alert('Админ добавлен');
+                document.getElementById('new-admin-username').value = '';
+                loadAdminsList();
+            } catch (e) {
+                console.error('Add admin network error:', e);
+                alert('Ошибка сети');
+            }
         }
 
         async function removeAdmin(targetIdentifier) {
             if (!confirm(`Снять администратора?`)) return;
-            await fetch('/api/admin/remove-admin', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ targetIdentifier })
-            });
-            loadAdminsList();
+            try {
+                await fetch('/api/admin/remove-admin', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier })
+                });
+                loadAdminsList();
+            } catch (e) {
+                console.error('Remove admin network error:', e);
+                alert('Ошибка сети');
+            }
         }
 
         async function startCase() {
@@ -1562,6 +1654,8 @@
             } catch (e) {
                 isSpinning = false;
                 btn.disabled = false;
+                console.error('Spin network error:', e);
+                alert('Ошибка соединения с сервером при открытии кейса');
                 return;
             }
 
