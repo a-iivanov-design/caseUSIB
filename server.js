@@ -190,7 +190,6 @@ app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });
 
-// Публичный эндпоинт для получения глобальных настроек всеми пользователями
 app.get('/api/settings', async (req, res) => {
   try {
     const result = await db.execute(`SELECT * FROM settings`);
@@ -205,7 +204,6 @@ app.get('/api/settings', async (req, res) => {
   }
 });
 
-// Сохранение настроек администратором
 app.post('/api/admin/settings', authMiddleware, async (req, res) => {
   try {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
