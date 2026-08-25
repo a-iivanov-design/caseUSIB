@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+[source: 18]<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -392,6 +392,7 @@
             width: 100%;
             box-sizing: border-box;
             transition: all 0.2s ease;
+            position: relative;
         }
         .inventory-card:hover, .admin-card:hover {
             border-color: rgba(255,255,255,0.08);
@@ -516,7 +517,7 @@
         }
 
         .admin-section-title { font-size: 12px; font-weight: 700; color: var(--text-main); }
-        .admin-menu-wrap { position: relative; z-index: 40; }
+        .admin-menu-wrap { position: relative; z-index: 100; }
 
         .admin-dots-btn {
             background: transparent;
@@ -537,14 +538,14 @@
             position: absolute;
             top: calc(100% + 6px);
             right: 0;
-            width: 180px;
-            background: rgba(14, 16, 22, 0.95);
+            width: 190px;
+            background: rgba(14, 16, 22, 0.98);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 14px;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.8);
-            z-index: 100;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.9);
+            z-index: 999;
             box-sizing: border-box;
             padding: 6px;
             flex-direction: column;
@@ -567,7 +568,7 @@
             transition: all 0.2s ease;
         }
         .admin-dropdown-item:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.08);
             color: var(--text-main);
         }
         .admin-dropdown-item.active { 
@@ -781,7 +782,7 @@
         <div id="admin-sub-admins" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%; flex:1; overflow:hidden;">
             <div id="super-admin-section" style="display:none; width:100%; margin-bottom:10px; flex-shrink:0;">
                 <div class="add-prize-form" style="margin-top:0;">
-                    <input type="text" id="new-admin-username" placeholder="Новый админ (@username)" autocomplete="off">
+                    <input type="text" id="new-admin-username" placeholder="Новый админ (@username или ID)" autocomplete="off">
                     <button class="spin-btn" style="padding:11px; font-size:11px; background:linear-gradient(135deg, rgba(255,77,77,0.3) 0%, rgba(255,77,77,0.15) 100%); color:var(--secondary); border:1px solid rgba(255,77,77,0.4);" onclick="addNewAdmin()">Назначить</button>
                 </div>
             </div>
@@ -807,7 +808,6 @@
             };
         }
 
-        // Вспомогательная функция для отображения: если есть username, показываем его, иначе ID
         function formatUserDisplay(username, id) {
             if (username && username.trim() !== '') {
                 return `@${username.replace('@', '')}`;
@@ -1187,7 +1187,7 @@
                 data.users.forEach(u => {
                     const isRopogkuUser = (u.username && u.username.toLowerCase() === 'ropogku') || u.id === 'ropogku';
                     const displayName = formatUserDisplay(u.username, u.id);
-                    const targetIdentifier = u.id; // Передаем ID как надежный идентификатор
+                    const targetIdentifier = u.id;
 
                     const card = document.createElement('div');
                     card.className = 'admin-card';
@@ -1201,7 +1201,7 @@
                                     <button type="button" class="admin-dropdown-item" style="color:var(--secondary);" onclick="actionUserBan('${targetIdentifier}', 1)">🛡️ Забанить</button>
                                     <button type="button" class="admin-dropdown-item" onclick="actionUserBan('${targetIdentifier}', 0)">✅ Разбанить</button>
                                     <button type="button" class="admin-dropdown-item" onclick="actionResetTimer('${targetIdentifier}')">⏳ Сбросить таймер</button>
-                                    ${u.username ? `<button type="button" class="admin-dropdown-item" onclick="actionMakeAdmin('${u.username}')">🔑 Назначить админом</button>` : ''}
+                                    <button type="button" class="admin-dropdown-item" onclick="actionMakeAdmin('${targetIdentifier}')">🔑 Назначить админом</button>
                                     <button type="button" class="admin-dropdown-item" style="color:var(--secondary);" onclick="deleteUser('${targetIdentifier}')">🗑️ Удалить</button>
                                 </div>
                             </div>
@@ -1244,7 +1244,6 @@
 
         async function actionMakeAdmin(newAdminUsername) {
             if (!isSuperAdmin) return alert('Только главный администратор может назначать других админов');
-            if (!newAdminUsername) return alert('У пользователя нет username');
             const res = await fetch('/api/admin/add-admin', {
                 method: 'POST',
                 headers: getAuthHeaders(),
@@ -1252,7 +1251,7 @@
             });
             const data = await res.json();
             if (data.error) { alert(data.error); return; }
-            alert(`Пользователь @${newAdminUsername} назначен администратором`);
+            alert(`Администратор успешно назначен`);
         }
 
         async function loadAdminsList() {
