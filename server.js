@@ -64,6 +64,17 @@ async function initDb() {
     )
   `);
 
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS admin_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      admin_id TEXT,
+      admin_username TEXT,
+      action TEXT,
+      details TEXT,
+      created_at TEXT
+    )
+  `);
+
   const adminCheck = await db.execute(`SELECT COUNT(*) as count FROM admins`);
   if (adminCheck.rows[0].count === 0) {
     await db.execute({
@@ -73,6 +84,20 @@ async function initDb() {
   }
 }
 initDb();
+
+async function logAdminAction(telegramUser, action, details) {
+  try {
+    const adminId = String(telegramUser.id);
+    const adminUsername = telegramUser.username ? telegramUser.username.replace('@', '').toLowerCase() : adminId;
+    const nowIso = new Date().toISOString();
+    await db.execute({
+      sql: `INSERT INTO admin_logs (admin_id, admin_username, action, details, created_at) VALUES (?, ?, ?, ?, ?)`,
+      args: [adminId, adminUsername, action, details, nowIso]
+    });
+  } catch (e) {
+    console.error('Log error:', e);
+  }
+}
 
 function verifyTelegramWebAppData(initData) {
   if (!initData || BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') {
@@ -172,6 +197,7 @@ app.post('/api/admin/upload-image', authMiddleware, async (req, res) => {
     const filePath = path.join(uploadsDir, uniqueName);
 
     fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+    await logAdminAction(req.telegramUser, 'UPLOAD_IMAGE', `Uploaded file: ${uniqueName}`);
 
     res.json({ success: true, url: `/uploads/${uniqueName}` });
   } catch (e) {
@@ -397,6 +423,7 @@ app.post('/api/admin/add-prize', authMiddleware, async (req, res) => {
       sql: `INSERT INTO prizes (name, icon, rarity, weight, promo_prefix) VALUES (?, ?, ?, ?, ?)`,
       args: [name, icon || '🎁', rarity || 'common', Number(weight) || 1, promo_prefix || 'PROMO']
     });
+    await logAdminAction(req.telegramUser, 'ADD_PRIZE', `Added prize: ${name}`);
     res.json({ success: true });
   } catch (e) {
     console.error('Add Prize Error:', e);
@@ -414,6 +441,7 @@ app.post('/api/admin/delete-prize', authMiddleware, async (req, res) => {
       sql: `DELETE FROM prizes WHERE id = ?`,
       args: [Number(prizeId)]
     });
+    await logAdminAction(req.telegramUser, 'DELETE_PRIZE', `Deleted prize ID: ${prizeId}`);
     res.json({ success: true });
   } catch (e) {
     console.error('Delete Prize Error:', e);
@@ -500,6 +528,7 @@ app.post('/api/admin/ban', authMiddleware, async (req, res) => {
       sql: `UPDATE users SET is_banned = ? WHERE id = ? OR LOWER(username) = ?`,
       args: [Number(banState), String(targetIdentifier), cleanId]
     });
+    await logAdminAction(req.telegramUser, 'SET_BAN', `Target: ${targetIdentifier}, State: ${banState}`);
     res.json({ success: true });
   } catch (e) {
     console.error('Ban Error:', e);
@@ -536,6 +565,7 @@ app.post('/api/admin/delete-user', authMiddleware, async (req, res) => {
       });
     }
 
+    await logAdminAction(req.telegramUser, 'DELETE_USER', `Deleted user: ${targetIdentifier}`);
     res.json({ success: true });
   } catch (e) {
     console.error('Delete User Error:', e);
@@ -554,6 +584,7 @@ app.post('/api/admin/reset-timer', authMiddleware, async (req, res) => {
       sql: `UPDATE users SET last_spin = NULL WHERE id = ? OR LOWER(username) = ?`,
       args: [String(targetIdentifier), cleanId]
     });
+    await logAdminAction(req.telegramUser, 'RESET_TIMER', `Reset timer for: ${targetIdentifier}`);
     res.json({ success: true });
   } catch (e) {
     console.error('Reset Timer Error:', e);
@@ -570,6 +601,19 @@ app.get('/api/admin/list', authMiddleware, async (req, res) => {
     res.json({ admins: admins.rows });
   } catch (e) {
     console.error('Admin List Error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/admin/logs', authMiddleware, async (req, res) => {
+  try {
+    const admin = await verifyAdminByTelegramUser(req.telegramUser);
+    if (!admin.isSuper) return res.status(403).json({ error: 'Access denied: Super admin only' });
+
+    const logsRes = await db.execute(`SELECT * FROM admin_logs ORDER BY id DESC LIMIT 50`);
+    res.json({ logs: logsRes.rows });
+  } catch (e) {
+    console.error('Admin Logs Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -601,6 +645,7 @@ app.post('/api/admin/add-admin', authMiddleware, async (req, res) => {
       sql: `INSERT OR IGNORE INTO admins (id, username, is_super) VALUES (?, ?, 0)`,
       args: [adminId, adminUsername]
     });
+    await logAdminAction(req.telegramUser, 'ADD_ADMIN', `Added admin: ${adminUsername} (${adminId})`);
     res.json({ success: true });
   } catch (e) {
     console.error('Add Admin Error:', e);
@@ -622,6 +667,7 @@ app.post('/api/admin/remove-admin', authMiddleware, async (req, res) => {
       sql: `DELETE FROM admins WHERE id = ? OR LOWER(username) = ?`,
       args: [String(targetIdentifier), cleanUser]
     });
+    await logAdminAction(req.telegramUser, 'REMOVE_ADMIN', `Removed admin: ${targetIdentifier}`);
     res.json({ success: true });
   } catch (e) {
     console.error('Remove Admin Error:', e);
@@ -633,4 +679,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
-[source: 30]
