@@ -1,11 +1,11 @@
-const express = require('express');
-const path = require('path');
-const { fileURLToPath } = require('url');
-const { createClient } = require('@libsql/client');
-const crypto = require('crypto');
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createClient } from '@libsql/client';
+import crypto from 'crypto';
 
-const __filename = __filename || '';
-const __dirname = path.dirname(process.mainModule ? process.mainModule.filename : __filename);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
@@ -547,7 +547,7 @@ app.post('/api/admin/add-admin', authMiddleware, async (req, res) => {
     let adminId = String(targetIdentifier);
     let adminUsername = cleanId;
 
-    if (userRes.rows.length > 0) {
+    if (userRes.rows.length` rows.length > 0) {
       adminId = userRes.rows[0].id;
       adminUsername = userRes.rows[0].username || adminId;
     }
