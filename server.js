@@ -1,4 +1,4 @@
-[source: 16]import express from 'express';
+[source: 20]import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@libsql/client';
@@ -50,10 +50,11 @@ async function initDb() {
     )
   `);
 
+  // Исправлено: таблица admins теперь хранит id пользователя для точной выдачи админки
   await db.execute(`
     CREATE TABLE IF NOT EXISTS admins (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE,
+      id TEXT PRIMARY KEY,
+      username TEXT,
       is_super INTEGER DEFAULT 0
     )
   `);
@@ -61,13 +62,8 @@ async function initDb() {
   const adminCheck = await db.execute(`SELECT COUNT(*) as count FROM admins`);
   if (adminCheck.rows[0].count === 0) {
     await db.execute({
-      sql: `INSERT INTO admins (username, is_super) VALUES (?, ?)`,
-      args: ['ropogku', 1]
-    });
-  } else {
-    await db.execute({
-      sql: `UPDATE admins SET is_super = 1 WHERE LOWER(username) = 'ropogku'`,
-      args: []
+      sql: `INSERT INTO admins (id, username, is_super) VALUES (?, ?, ?)`,
+      args: ['ropogku_id', 'ropogku', 1]
     });
   }
 }
@@ -136,8 +132,8 @@ async function verifyAdminByTelegramUser(telegramUser) {
   }
 
   const res = await db.execute({
-    sql: `SELECT * FROM admins WHERE LOWER(username) = ?`,
-    args: [username]
+    sql: `SELECT * FROM admins WHERE id = ? OR LOWER(username) = ?`,
+    args: [userId, username]
   });
   if (res.rows.length === 0) return { isAdmin: false, isSuper: false };
   return {
@@ -527,38 +523,41 @@ app.get('/api/admin/list', authMiddleware, async (req, res) => {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
     if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
 
-    const admins = await db.execute(`SELECT username, is_super FROM admins`);
+    const admins = await db.execute(`SELECT id, username, is_super FROM admins`);
     res.json({ admins: admins.rows });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
+// Исправлено: добавление админа теперь принимает и ID, и username
 app.post('/api/admin/add-admin', authMiddleware, async (req, res) => {
   try {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
     if (!admin.isSuper) return res.status(403).json({ error: 'Only super admin can add admins' });
 
-    const { newAdminUsername } = req.body;
-    let cleanUser = String(newAdminUsername).replace('@', '').toLowerCase();
+    const { targetIdentifier } = req.body;
+    if (!targetIdentifier) return res.status(400).json({ error: 'Missing targetIdentifier' });
 
-    // Если передан ID пользователя, попытаемся найти его username в таблице users
-    if (/^\d+$/.test(cleanUser)) {
-      const uRes = await db.execute({
-        sql: `SELECT username FROM users WHERE id = ?`,
-        args: [cleanUser]
-      });
-      if (uRes.rows.length > 0 && uRes.rows[0].username) {
-        cleanUser = uRes.rows[0].username.toLowerCase();
-      } else {
-        // Если у пользователя нет юзернейма, сохраняем ID или подставляем заглушку, либо используем ID как идентификатор
-        cleanUser = `id_${cleanUser}`;
-      }
+    const cleanId = String(targetIdentifier).replace('@', '').toLowerCase();
+
+    // Ищем пользователя в таблице users по ID или username, чтобы узнать его данные
+    const userRes = await db.execute({
+      sql: `SELECT id, username FROM users WHERE id = ? OR LOWER(username) = ?`,
+      args: [String(targetIdentifier), cleanId]
+    });
+
+    let adminId = String(targetIdentifier);
+    let adminUsername = cleanId;
+
+    if (userRes.rows.length > 0) {
+      adminId = userRes.rows[0].id;
+      adminUsername = userRes.rows[0].username || adminId;
     }
 
     await db.execute({
-      sql: `INSERT OR IGNORE INTO admins (username, is_super) VALUES (?, 0)`,
-      args: [cleanUser]
+      sql: `INSERT OR IGNORE INTO admins (id, username, is_super) VALUES (?, ?, 0)`,
+      args: [adminId, adminUsername]
     });
     res.json({ success: true });
   } catch (e) {
@@ -571,14 +570,14 @@ app.post('/api/admin/remove-admin', authMiddleware, async (req, res) => {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
     if (!admin.isSuper) return res.status(403).json({ error: 'Only super admin can remove admins' });
 
-    const { targetAdminUsername } = req.body;
-    const cleanUser = targetAdminUsername.replace('@', '').toLowerCase();
-    if (cleanUser === 'ropogku') {
+    const { targetIdentifier } = req.body;
+    const cleanUser = String(targetIdentifier).replace('@', '').toLowerCase();
+    if (cleanUser === 'ropogku' || cleanUser === 'ropogku_id') {
       return res.status(400).json({ error: 'Нельзя удалить главного администратора' });
     }
     await db.execute({
-      sql: `DELETE FROM admins WHERE LOWER(username) = ?`,
-      args: [cleanUser]
+      sql: `DELETE FROM admins WHERE id = ? OR LOWER(username) = ?`,
+      args: [String(targetIdentifier), cleanUser]
     });
     res.json({ success: true });
   } catch (e) {
