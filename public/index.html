@@ -395,7 +395,7 @@
             transition: all 0.2s ease;
             position: relative;
             overflow: visible;
-            z-index: 1; /* Базовый z-index для карточек */
+            z-index: 1;
         }
         .inventory-card:hover, .admin-card:hover {
             border-color: rgba(255,255,255,0.08);
@@ -944,8 +944,6 @@
 
         function toggleUserMenu(event, targetIdentifier) {
             event.stopPropagation();
-            
-            // Сбрасываем z-index у всех карточек и закрываем остальные меню пользователей
             document.querySelectorAll('.admin-card').forEach(c => c.style.zIndex = '1');
             document.querySelectorAll('.user-dropdown-menu').forEach(m => {
                 if (m.id !== `user-menu-${targetIdentifier}`) m.style.display = 'none';
@@ -958,7 +956,7 @@
                 const isOpen = menu.style.display === 'flex';
                 menu.style.display = isOpen ? 'none' : 'flex';
                 if (!isOpen && card) {
-                    card.style.zIndex = '1000'; // Поднимаем текущую карточку поверх остальных
+                    card.style.zIndex = '1000';
                 }
             }
         }
@@ -1083,7 +1081,13 @@
                     cardElement.style.transition = 'all 0.3s ease';
                     cardElement.style.opacity = '0';
                     cardElement.style.transform = 'scale(0.9)';
-                    setTimeout(() => cardElement.remove(), 300);
+                    setTimeout(() => {
+                        cardElement.remove();
+                        const listEl = document.getElementById('inventory-list');
+                        if (listEl && listEl.children.length === 0) {
+                            listEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top:20px;">Инвентарь пуст</div>';
+                        }
+                    }, 300);
                 } else {
                     loadInventory();
                 }
@@ -1132,6 +1136,7 @@
 
         async function loadStats() {
             const statsBox = document.getElementById('stats-content');
+            statsBox.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px; padding:20px;">Загрузка...</div>';
             try {
                 const res = await fetch(`/api/admin/stats`, { headers: getAuthHeaders() });
                 const data = await res.json();
