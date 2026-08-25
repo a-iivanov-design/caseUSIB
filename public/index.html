@@ -1,4 +1,4 @@
-[source: 18]<!DOCTYPE html>
+[source: 22]<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -375,6 +375,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            overflow: visible; /* Исправлено: предотвращает обрезание меню */
         }
 
         .inventory-card, .admin-card {
@@ -392,7 +393,8 @@
             width: 100%;
             box-sizing: border-box;
             transition: all 0.2s ease;
-            position: relative;
+            position: relative; /* Исправлено для правильного позиционирования меню */
+            overflow: visible;  /* Исправлено для предотвращения наложения */
         }
         .inventory-card:hover, .admin-card:hover {
             border-color: rgba(255,255,255,0.08);
@@ -517,7 +519,7 @@
         }
 
         .admin-section-title { font-size: 12px; font-weight: 700; color: var(--text-main); }
-        .admin-menu-wrap { position: relative; z-index: 100; }
+        .admin-menu-wrap { position: relative; z-index: 40; }
 
         .admin-dots-btn {
             background: transparent;
@@ -538,14 +540,14 @@
             position: absolute;
             top: calc(100% + 6px);
             right: 0;
-            width: 190px;
+            width: 180px;
             background: rgba(14, 16, 22, 0.98);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 14px;
             box-shadow: 0 16px 40px rgba(0,0,0,0.9);
-            z-index: 999;
+            z-index: 9999; /* Повышен z-index, чтобы меню было поверх всех элементов */
             box-sizing: border-box;
             padding: 6px;
             flex-direction: column;
@@ -568,7 +570,7 @@
             transition: all 0.2s ease;
         }
         .admin-dropdown-item:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
             color: var(--text-main);
         }
         .admin-dropdown-item.active { 
@@ -782,7 +784,7 @@
         <div id="admin-sub-admins" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%; flex:1; overflow:hidden;">
             <div id="super-admin-section" style="display:none; width:100%; margin-bottom:10px; flex-shrink:0;">
                 <div class="add-prize-form" style="margin-top:0;">
-                    <input type="text" id="new-admin-username" placeholder="Новый админ (@username или ID)" autocomplete="off">
+                    <input type="text" id="new-admin-username" placeholder="Админ (@username или ID)" autocomplete="off">
                     <button class="spin-btn" style="padding:11px; font-size:11px; background:linear-gradient(135deg, rgba(255,77,77,0.3) 0%, rgba(255,77,77,0.15) 100%); color:var(--secondary); border:1px solid rgba(255,77,77,0.4);" onclick="addNewAdmin()">Назначить</button>
                 </div>
             </div>
@@ -1185,7 +1187,7 @@
                 }
                 listEl.innerHTML = '';
                 data.users.forEach(u => {
-                    const isRopogkuUser = (u.username && u.username.toLowerCase() === 'ropogku') || u.id === 'ropogku';
+                    const isRopogkuUser = (u.username && u.username.toLowerCase() === 'ropogku') || u.id === 'ropogku' || u.id === 'ropogku_id';
                     const displayName = formatUserDisplay(u.username, u.id);
                     const targetIdentifier = u.id;
 
@@ -1242,16 +1244,16 @@
             alert('Таймер открытия кейса сброшен');
         }
 
-        async function actionMakeAdmin(newAdminUsername) {
+        async function actionMakeAdmin(targetIdentifier) {
             if (!isSuperAdmin) return alert('Только главный администратор может назначать других админов');
             const res = await fetch('/api/admin/add-admin', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ newAdminUsername })
+                body: JSON.stringify({ targetIdentifier })
             });
             const data = await res.json();
             if (data.error) { alert(data.error); return; }
-            alert(`Администратор успешно назначен`);
+            alert(`Пользователь успешно назначен администратором`);
         }
 
         async function loadAdminsList() {
@@ -1262,14 +1264,15 @@
                 const data = await res.json();
                 listEl.innerHTML = '';
                 data.admins.forEach(adm => {
-                    const isTargetRopogku = adm.username.toLowerCase() === 'ropogku';
+                    const isTargetRopogku = adm.username?.toLowerCase() === 'ropogku' || adm.id === 'ropogku_id';
                     const card = document.createElement('div');
                     card.className = 'admin-card';
                     let actionBtn = '';
                     if (isSuperAdmin && !isTargetRopogku) {
-                        actionBtn = `<button type="button" style="background:var(--card-bg); color:var(--text-muted); border:1px solid var(--border-color);" onclick="removeAdmin('${adm.username}')">Снять</button>`;
+                        actionBtn = `<button type="button" style="background:var(--card-bg); color:var(--text-muted); border:1px solid var(--border-color);" onclick="removeAdmin('${adm.id}')">Снять</button>`;
                     }
-                    card.innerHTML = `<div>@${adm.username} ${adm.is_super ? '(Супер)' : ''}</div>${actionBtn}`;
+                    const displayName = adm.username ? `@${adm.username}` : `ID: ${adm.id}`;
+                    card.innerHTML = `<div>${displayName} ${adm.is_super ? '(Супер)' : ''}</div>${actionBtn}`;
                     listEl.appendChild(card);
                 });
             } catch (e) {}
@@ -1374,23 +1377,24 @@
         }
 
         async function addNewAdmin() {
-            const newAdminUsername = document.getElementById('new-admin-username').value;
-            if (!newAdminUsername) return;
+            const targetIdentifier = document.getElementById('new-admin-username').value;
+            if (!targetIdentifier) return;
             await fetch('/api/admin/add-admin', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ newAdminUsername })
+                body: JSON.stringify({ targetIdentifier })
             });
             alert('Админ добавлен');
+            document.getElementById('new-admin-username').value = '';
             loadAdminsList();
         }
 
-        async function removeAdmin(targetAdminUsername) {
-            if (!confirm(`Снять администратора @${targetAdminUsername}?`)) return;
+        async function removeAdmin(targetIdentifier) {
+            if (!confirm(`Снять администратора?`)) return;
             await fetch('/api/admin/remove-admin', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ targetAdminUsername })
+                body: JSON.stringify({ targetIdentifier })
             });
             loadAdminsList();
         }
