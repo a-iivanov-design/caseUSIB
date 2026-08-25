@@ -8,15 +8,15 @@
     <script src="config.js"></script>
     <style>
         :root {
-            --primary: #E5A93B;
-            --primary-glow: rgba(229, 169, 59, 0.15);
-            --secondary: #E03E3E;
-            --secondary-glow: rgba(224, 62, 62, 0.2);
+            --primary: #D4A373;
+            --primary-glow: rgba(212, 163, 115, 0.15);
+            --secondary: #E05353;
+            --secondary-glow: rgba(224, 83, 83, 0.2);
             --bg: #030406;
             --card-bg: rgba(16, 18, 23, 0.65);
             --card-hover: rgba(23, 26, 33, 0.85);
             --border-color: rgba(255, 255, 255, 0.04);
-            --border-active: rgba(229, 169, 59, 0.3);
+            --border-active: rgba(212, 163, 115, 0.3);
             --text-main: #F3F4F6;
             --text-muted: #6B7280;
         }
@@ -125,7 +125,6 @@
             display: flex;
         }
 
-        /* ФОН НА ВСЮ СТРАНИЦУ ДЛЯ РУЛЕТКИ */
         #section-case.view-section {
             background-size: cover !important;
             background-position: center !important;
@@ -186,7 +185,7 @@
 
         @keyframes pulseCase {
             0%, 100% { transform: translateY(0); border-color: var(--border-color); box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.08); }
-            50% { transform: translateY(-6px); border-color: rgba(229, 169, 59, 0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.7), 0 0 30px rgba(229, 169, 59, 0.08), inset 0 1px 1px rgba(255,255,255,0.15); }
+            50% { transform: translateY(-6px); border-color: rgba(212, 163, 115, 0.25); box-shadow: 0 24px 48px rgba(0,0,0,0.7), 0 0 30px rgba(212, 163, 115, 0.08), inset 0 1px 1px rgba(255,255,255,0.15); }
         }
 
         .roller-container-wrapper {
@@ -243,7 +242,7 @@
 
         .prize-item.prize-rare { background: linear-gradient(145deg, #0f1626 0%, #0a0e17 100%); border-color: rgba(59, 130, 246, 0.2); }
         .prize-item.prize-epic { background: linear-gradient(145deg, #191024 0%, #0f0a17 100%); border-color: rgba(168, 85, 247, 0.2); }
-        .prize-item.prize-legendary { background: linear-gradient(145deg, #241a0d 0%, #140f07 100%); border-color: rgba(229, 169, 59, 0.35); }
+        .prize-item.prize-legendary { background: linear-gradient(145deg, #241a0d 0%, #140f07 100%); border-color: rgba(212, 163, 115, 0.35); }
 
         .prize-icon-wrap {
             font-size: 32px;
@@ -291,8 +290,8 @@
             border-radius: 16px;
             z-index: 10;
             pointer-events: none;
-            box-shadow: 0 0 20px var(--primary-glow), inset 0 0 10px rgba(229, 169, 59, 0.05);
-            background: linear-gradient(180deg, rgba(229, 169, 59, 0.03) 0%, transparent 100%);
+            box-shadow: 0 0 20px var(--primary-glow), inset 0 0 10px rgba(212, 163, 115, 0.05);
+            background: linear-gradient(180deg, rgba(212, 163, 115, 0.03) 0%, transparent 100%);
         }
 
         .selector-center-box::before, .selector-center-box::after {
@@ -329,7 +328,7 @@
 
         button.spin-btn {
             width: 100%;
-            background: linear-gradient(135deg, #f0b44d 0%, #e5a93b 50%, #c78d24 100%);
+            background: linear-gradient(135deg, #e3b78c 0%, #d4a373 50%, #b88656 100%);
             color: #08090C;
             border: none;
             padding: 15px;
@@ -347,7 +346,7 @@
         button.spin-btn:not(:disabled):hover {
             filter: brightness(1.05);
             transform: translateY(-1px);
-            box-shadow: 0 10px 28px rgba(229, 169, 59, 0.25), inset 0 1px 1px rgba(255,255,255,0.5);
+            box-shadow: 0 10px 28px rgba(212, 163, 115, 0.25), inset 0 1px 1px rgba(255,255,255,0.5);
         }
         button.spin-btn:disabled {
             background: var(--card-bg);
@@ -430,9 +429,9 @@
         }
 
         .admin-card button, .inventory-card button {
-            background: rgba(224, 62, 62, 0.1);
+            background: rgba(224, 83, 83, 0.1);
             color: var(--secondary);
-            border: 1px solid rgba(224, 62, 62, 0.2);
+            border: 1px solid rgba(224, 83, 83, 0.2);
             padding: 7px 12px;
             border-radius: 8px;
             cursor: pointer;
@@ -586,7 +585,7 @@
         }
         .admin-dropdown-item.active { 
             color: var(--primary); 
-            background: rgba(229, 169, 59, 0.08); 
+            background: rgba(212, 163, 115, 0.08); 
         }
 
         .bottom-nav-toggle {
@@ -621,7 +620,7 @@
             transition: all 0.2s ease;
         }
         .nav-toggle-btn.active {
-            background: linear-gradient(135deg, #f0b44d 0%, #e5a93b 100%);
+            background: linear-gradient(135deg, #e3b78c 0%, #d4a373 100%);
             color: #08090C;
             box-shadow: 0 4px 16px var(--primary-glow);
         }
@@ -642,7 +641,7 @@
         }
         .banned-box {
             background: var(--card-bg);
-            border: 1px solid rgba(224, 62, 62, 0.2);
+            border: 1px solid rgba(224, 83, 83, 0.2);
             padding: 30px 24px;
             border-radius: 20px;
             max-width: 280px;
@@ -665,7 +664,7 @@
         }
         .win-modal-card {
             background: linear-gradient(145deg, rgba(18, 20, 26, 0.95) 0%, rgba(10, 12, 16, 0.98) 100%);
-            border: 1px solid rgba(229, 169, 59, 0.3);
+            border: 1px solid rgba(212, 163, 115, 0.3);
             padding: 28px 20px;
             border-radius: 22px;
             max-width: 280px;
@@ -684,7 +683,7 @@
 
     <div id="banned-screen">
         <div class="banned-box">
-            <div style="font-size: 46px; margin-bottom: 14px; filter: drop-shadow(0 0 10px rgba(255,77,77,0.5));">⚠️</div>
+            <div style="font-size: 46px; margin-bottom: 14px; filter: drop-shadow(0 0 10px rgba(224,83,83,0.5));">⚠️</div>
             <h2 style="color: var(--text-main); margin: 0 0 8px 0; font-size: 17px; font-weight: 800;">Доступ ограничен</h2>
             <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 0;">Ваш аккаунт заблокирован администрацией.</p>
         </div>
@@ -787,7 +786,7 @@
             <div class="add-prize-form" style="flex-shrink:0;">
                 <input type="text" id="ban-username" placeholder="Юзернейм (@username) или ID" autocomplete="off">
                 <div style="display: flex; gap: 8px;">
-                    <button class="spin-btn" style="padding:11px; font-size:11px; background:linear-gradient(135deg, rgba(255,77,77,0.3) 0%, rgba(255,77,77,0.15) 100%); color:var(--secondary); border:1px solid rgba(255,77,77,0.4);" onclick="setBanStatus(1)">Бан</button>
+                    <button class="spin-btn" style="padding:11px; font-size:11px; background:linear-gradient(135deg, rgba(224,83,83,0.3) 0%, rgba(224,83,83,0.15) 100%); color:var(--secondary); border:1px solid rgba(224,83,83,0.4);" onclick="setBanStatus(1)">Бан</button>
                     <button class="spin-btn" style="padding:11px; font-size:11px; background:var(--card-bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="setBanStatus(0)">Разбан</button>
                 </div>
                 <button class="spin-btn" style="padding:11px; font-size:11px; background:var(--card-bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="resetTimer()">Сбросить таймер</button>
@@ -803,7 +802,7 @@
             <div id="super-admin-section" style="display:none; width:100%; margin-bottom:10px; flex-shrink:0;">
                 <div class="add-prize-form" style="margin-top:0;">
                     <input type="text" id="new-admin-username" placeholder="Админ (@username или ID)" autocomplete="off">
-                    <button class="spin-btn" style="padding:11px; font-size:11px; background:linear-gradient(135deg, rgba(255,77,77,0.3) 0%, rgba(255,77,77,0.15) 100%); color:var(--secondary); border:1px solid rgba(255,77,77,0.4);" onclick="addNewAdmin()">Назначить</button>
+                    <button class="spin-btn" style="padding:11px; font-size:11px; background:linear-gradient(135deg, rgba(224,83,83,0.3) 0%, rgba(224,83,83,0.15) 100%); color:var(--secondary); border:1px solid rgba(224,83,83,0.4);" onclick="addNewAdmin()">Назначить</button>
                 </div>
             </div>
             <div class="admin-list" id="admins-list-container" style="width: 100%;"></div>
@@ -819,12 +818,13 @@
         <div id="admin-sub-background" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
             <div class="add-prize-form" style="margin-top:0;">
                 <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Логотип клуба (картинка)</div>
-                <input type="file" id="logo-file-input" accept="image/*" style="display: none;" handleLogoUpload(event) onchange="handleLogoUpload(event)">
+                <input type="file" id="logo-file-input" accept="image/*" style="display: none;" onchange="handleLogoUpload(event)">
                 <button class="spin-btn" style="padding: 11px; font-size: 11px; margin-bottom: 6px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="document.getElementById('logo-file-input').click()">📁 Загрузить файл логотипа</button>
                 <input type="text" id="logo-url-input" placeholder="Или прямая ссылка на логотип" autocomplete="off">
                 <button class="spin-btn" style="padding: 11px; font-size: 11px; margin-top: 4px; margin-bottom: 12px;" onclick="applyClubLogoImage()">Установить логотип-картинку</button>
 
-                <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Название клуба (вместо Case Lounge)</div>
+                <!-- Упрощенный блок настройки названия вместогромоздких полей -->
+                <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Название клуба (Текст)</div>
                 <input type="text" id="logo-text-input" placeholder="Например: CYBER <span>CLUB</span>" autocomplete="off">
                 <button class="spin-btn" style="padding: 11px; font-size: 11px; margin-top: 4px; margin-bottom: 12px;" onclick="applyClubLogoText()">Установить текст логотипа</button>
 
@@ -834,7 +834,7 @@
                 <input type="text" id="bg-url-input" placeholder="Или ссылка на фон (картинку)" autocomplete="off">
                 <div style="display: flex; gap: 8px; margin-top: 4px; margin-bottom: 12px;">
                     <button class="spin-btn" style="padding: 11px; font-size: 11px; flex: 1;" onclick="applyBackground()">Установить фон</button>
-                    <button class="spin-btn" style="padding: 11px; font-size: 11px; flex: 1; background: rgba(224,62,62,0.1); color: var(--secondary); border: 1px solid rgba(224,62,62,0.2);" onclick="removeBackground()">Удалить фон</button>
+                    <button class="spin-btn" style="padding: 11px; font-size: 11px; flex: 1; background: rgba(224,83,83,0.1); color: var(--secondary); border: 1px solid rgba(224,83,83,0.2);" onclick="removeBackground()">Удалить фон</button>
                 </div>
 
                 <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Иконка главного кейса</div>
@@ -879,16 +879,27 @@
             return icon;
         }
 
-        // Загрузка глобальных настроек с сервера для всех пользователей
+        // Оптимизированная предзагрузка картинок перед отображением, чтобы они не прогружались частями
+        function preloadImage(url) {
+            return new Promise((resolve) => {
+                if (!url) return resolve();
+                const img = new Image();
+                img.src = url;
+                img.onload = () => resolve(url);
+                img.onerror = () => resolve(null);
+            });
+        }
+
         async function loadAppSettings() {
             try {
                 const res = await fetch('/api/settings');
                 const settings = await res.json();
                 
-                // 1. Фон страницы
                 const savedBg = settings.homeBackground || (window.APP_CONFIG && window.APP_CONFIG.homeBackground);
                 const caseSection = document.getElementById('section-case');
+                
                 if (savedBg && savedBg.trim() !== '') {
+                    await preloadImage(savedBg);
                     caseSection.style.backgroundImage = `url('${savedBg}')`;
                     caseSection.classList.add('has-custom-bg');
                 } else {
@@ -896,28 +907,29 @@
                     caseSection.classList.remove('has-custom-bg');
                 }
 
-                // 2. Иконка кейса
                 const savedCase = settings.caseImage || (window.APP_CONFIG && window.APP_CONFIG.caseImage);
                 const caseIconContainer = document.getElementById('case-preview-icon');
                 if (savedCase) {
                     if (savedCase.startsWith('http') || savedCase.startsWith('/')) {
+                        await preloadImage(savedCase);
                         caseIconContainer.innerHTML = `<img src="${savedCase}" alt="Case">`;
                     } else {
                         caseIconContainer.innerText = savedCase;
                     }
                 }
 
-                // 3. Логотип клуба (картинка или текст)
                 const savedLogoImg = settings.clubLogoImage;
                 const savedLogoText = settings.clubLogoText;
                 const logoBox = document.getElementById('header-logo-box');
 
                 if (savedLogoImg && savedLogoImg.trim() !== '') {
+                    await preloadImage(savedLogoImg);
                     logoBox.innerHTML = `<img src="${savedLogoImg}" class="club-logo-img" alt="Logo" onerror="this.outerHTML='<div class=\'club-logo-text\'>CASE <span>LOUNGE</span></div>'">`;
                 } else if (savedLogoText && savedLogoText.trim() !== '') {
                     logoBox.innerHTML = `<div class="club-logo-text">${savedLogoText}</div>`;
                 } else if (window.APP_CONFIG) {
                     if (window.APP_CONFIG.clubLogoImage) {
+                        await preloadImage(window.APP_CONFIG.clubLogoImage);
                         logoBox.innerHTML = `<img src="${window.APP_CONFIG.clubLogoImage}" class="club-logo-img" alt="Logo">`;
                     } else if (window.APP_CONFIG.clubLogoText) {
                         logoBox.innerHTML = `<div class="club-logo-text">${window.APP_CONFIG.clubLogoText}</div>`;
@@ -1220,7 +1232,6 @@
             }
 
             try {
-                // Стираем текстовый логотип и сохраняем картинку
                 await fetch('/api/admin/settings', {
                     method: 'POST',
                     headers: getAuthHeaders(),
@@ -1251,7 +1262,6 @@
             }
 
             try {
-                // Стираем картинку логотипа и сохраняем текст
                 await fetch('/api/admin/settings', {
                     method: 'POST',
                     headers: getAuthHeaders(),
@@ -1736,7 +1746,70 @@
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
+                alert('Пользователь удален');
                 loadAllUsers();
+            } catch (e) { alert('Ошибка сети'); }
+        }
+
+        async function removeAdmin(targetIdentifier) {
+            if (!confirm('Снять администратора?')) return;
+            try {
+                const res = await fetch('/api/admin/remove-admin', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                alert('Администратор снят');
+                loadAdminsList();
+            } catch (e) { alert('Ошибка сети'); }
+        }
+
+        async function addPrize() {
+            const name = document.getElementById('new-name').value.trim();
+            const icon = document.getElementById('new-icon').value.trim();
+            const rarity = document.getElementById('new-rarity').value.trim();
+            const weight = document.getElementById('new-weight').value.trim();
+            const promo_prefix = document.getElementById('new-promo').value.trim();
+
+            if (!name || !weight) {
+                alert('Заполните название и шанс (вес) приза');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/admin/add-prize', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ name, icon, rarity, weight: Number(weight), promo_prefix })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                alert('Приз успешно добавлен!');
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-icon').value = '';
+                document.getElementById('new-rarity').value = '';
+                document.getElementById('new-weight').value = '';
+                document.getElementById('new-promo').value = '';
+                switchAdminSub('prizes');
+                isPrizesLoadedOnce = false;
+                loadAdminPrizes();
+            } catch (e) { alert('Ошибка сети'); }
+        }
+
+        async function deletePrize(prizeId) {
+            if (!confirm('Удалить этот приз?')) return;
+            try {
+                const res = await fetch('/api/admin/delete-prize', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ prizeId })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                const card = document.getElementById(`admin-prize-card-${prizeId}`);
+                if (card) card.remove();
             } catch (e) { alert('Ошибка сети'); }
         }
 
@@ -1748,173 +1821,140 @@
                 await fetch('/api/admin/update-prize', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ prizeId: Number(prizeId), weight })
+                    body: JSON.stringify({ prizeId, weight })
                 });
             } catch (e) { console.error(e); }
         }
 
-        async function addPrize() {
-            const nameEl = document.getElementById('new-name');
-            const iconEl = document.getElementById('new-icon');
-            const rarityEl = document.getElementById('new-rarity');
-            const weightEl = document.getElementById('new-weight');
-            const promoEl = document.getElementById('new-promo');
-
-            const name = nameEl.value;
-            const icon = iconEl.value;
-            const rarity = rarityEl.value;
-            const weight = Number(weightEl.value);
-            const promo_prefix = promoEl.value;
-
-            if (!name || !weight) return alert('Укажите название и шанс');
-
-            try {
-                await fetch('/api/admin/add-prize', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ name, icon, rarity, weight, promo_prefix })
-                });
-                
-                nameEl.value = '';
-                iconEl.value = '';
-                rarityEl.value = '';
-                weightEl.value = '';
-                promoEl.value = '';
-
-                switchAdminSub('prizes');
-                loadAdminPrizes();
-            } catch (e) { alert('Ошибка сети при добавлении приза'); }
-        }
-
-        async function deletePrize(prizeId) {
-            if (!confirm('Удалить приз?')) return;
-            try {
-                await fetch('/api/admin/delete-prize', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ prizeId: Number(prizeId) })
-                });
-                loadAdminPrizes();
-            } catch (e) { alert('Ошибка сети'); }
-        }
-
         async function addNewAdmin() {
-            const targetIdentifier = document.getElementById('new-admin-username').value;
+            const targetIdentifier = document.getElementById('new-admin-username').value.trim();
             if (!targetIdentifier) return;
             try {
-                await fetch('/api/admin/add-admin', {
+                const res = await fetch('/api/admin/add-admin', {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({ targetIdentifier })
                 });
-                alert('Админ добавлен');
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                alert('Администратор добавлен');
                 document.getElementById('new-admin-username').value = '';
                 loadAdminsList();
             } catch (e) { alert('Ошибка сети'); }
         }
 
-        async function removeAdmin(targetIdentifier) {
-            if (!confirm(`Снять администратора?`)) return;
-            try {
-                await fetch('/api/admin/remove-admin', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier })
-                });
-                loadAdminsList();
-            } catch (e) { alert('Ошибка сети'); }
+        // ЛОГИКА РУЛЕТКИ
+        function createRollerItem(p) {
+            const div = document.createElement('div');
+            let rarityClass = '';
+            if (p.rarity === 'rare') rarityClass = 'prize-rare';
+            if (p.rarity === 'epic') rarityClass = 'prize-epic';
+            if (p.rarity === 'legendary') rarityClass = 'prize-legendary';
+
+            div.className = `prize-item ${rarityClass}`;
+            div.innerHTML = `
+                <div class="prize-icon-wrap">${getIconHtml(p.icon, '38px')}</div>
+                <div class="prize-name">${p.name}</div>
+                <div class="prize-desc">${p.rarity || 'common'}</div>
+            `;
+            return div;
         }
 
         async function startCase() {
             if (isSpinning) return;
-            isSpinning = true;
 
             const btn = document.getElementById('action-button');
-            const content = document.getElementById('roller-content');
             const msg = document.getElementById('result-message');
-
-            btn.disabled = true;
-            btn.innerText = 'Открытие...';
             msg.innerText = '';
 
-            let serverData = null;
             try {
-                const response = await fetch('/api/spin', {
+                const res = await fetch('/api/spin', {
                     method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({})
+                    headers: getAuthHeaders()
                 });
-                serverData = await response.json();
+                const data = await res.json();
 
-                if (response.status !== 200) {
-                    isSpinning = false;
-                    btn.disabled = false;
-                    msg.style.color = 'var(--secondary)';
-                    msg.innerText = serverData.error || 'Ошибка';
-                    if (serverData.isBanned) {
-                        document.getElementById('banned-screen').style.display = 'flex';
-                    }
+                if (data.error) {
+                    alert(data.error);
+                    checkUserStatus();
                     return;
                 }
+
+                isSpinning = true;
+                btn.disabled = true;
+
+                // Загружаем список призов если пустой
+                let prizes = cachedServerPrizes;
+                if (!prizes || prizes.length === 0) {
+                    const pRes = await fetch('/api/admin/prizes', { headers: getAuthHeaders() });
+                    const pData = await pRes.json();
+                    prizes = pData.prizes || [];
+                }
+
+                if (prizes.length === 0) {
+                    alert('Призы не настроены!');
+                    isSpinning = false;
+                    btn.disabled = false;
+                    return;
+                }
+
+                // Переключаем превью на рулетку
+                document.getElementById('case-preview-container').style.display = 'none';
+                document.getElementById('roller-wrapper-box').style.display = 'flex';
+
+                const rollerContent = document.getElementById('roller-content');
+                rollerContent.innerHTML = '';
+
+                // Генерируем ленту рулетки (около 60 элементов, победный элемент на 50 позиции)
+                const totalItemsCount = 60;
+                const winningIndex = 50;
+                const builtItems = [];
+
+                for (let i = 0; i < totalItemsCount; i++) {
+                    let prizeObj;
+                    if (i === winningIndex) {
+                        prizeObj = prizes.find(p => p.name === data.prize.name) || data.prize;
+                    } else {
+                        prizeObj = prizes[Math.floor(Math.random() * prizes.length)];
+                    }
+                    const el = createRollerItem(prizeObj);
+                    rollerContent.appendChild(el);
+                    builtItems.push(el);
+                }
+
+                // Расчет анимации прокрутки
+                const itemWidth = 144; // 136px width + 8px margins
+                const windowWidth = document.getElementById('roller-window').clientWidth;
+                
+                // Центрируем выигрышный элемент точно по центру окна
+                const targetOffset = (winningIndex * itemWidth) - (windowWidth / 2) + (itemWidth / 2);
+                const randomJitter = (Math.random() * 80) - 40; // Небольшой случайный сдвиг внутри карточки
+                const finalPosition = targetOffset + randomJitter;
+
+                rollerContent.style.transition = 'none';
+                rollerContent.style.left = '0px';
+                
+                // Вынужденный reflow
+                void rollerContent.offsetHeight;
+
+                rollerContent.style.transition = 'left 4.5s cubic-bezier(0.08, 0.82, 0.12, 1)';
+                rollerContent.style.left = `-${finalPosition}px`;
+
+                setTimeout(() => {
+                    isSpinning = false;
+                    // Показываем модальное окно победы
+                    document.getElementById('win-modal-icon').innerHTML = getIconHtml(data.prize.icon, '52px');
+                    document.getElementById('win-modal-title').innerText = data.prize.name;
+                    document.getElementById('win-modal-promo').innerText = data.promo;
+                    document.getElementById('win-modal').style.display = 'flex';
+                }, 4700);
+
             } catch (e) {
+                console.error(e);
                 isSpinning = false;
                 btn.disabled = false;
-                console.error(e);
-                alert('Ошибка соединения с сервером');
-                return;
+                alert('Произошла ошибка при открытии кейса');
             }
-
-            document.getElementById('case-preview-container').style.display = 'none';
-            document.getElementById('roller-wrapper-box').style.display = 'flex';
-
-            const winningPrize = serverData.prize;
-            let availablePrizes = cachedServerPrizes;
-            if (!availablePrizes || availablePrizes.length === 0) {
-                availablePrizes = [{ name: winningPrize.name, icon: winningPrize.icon, rarity: winningPrize.rarity || 'common' }];
-            }
-
-            content.innerHTML = '';
-            for (let i = 0; i < 40; i++) {
-                const randP = availablePrizes[Math.floor(Math.random() * availablePrizes.length)];
-                const p = (i === 30) ? winningPrize : randP;
-                
-                const div = document.createElement('div');
-                div.className = `prize-item prize-${p.rarity || 'common'}`;
-                div.innerHTML = `
-                    <div class="prize-icon-wrap">${getIconHtml(p.icon, '36px')}</div>
-                    <div class="prize-name">${p.name}</div>
-                    <div class="prize-desc">Приз клуба</div>
-                `;
-                content.appendChild(div);
-            }
-
-            content.style.transition = 'none';
-            content.style.left = '0px';
-
-            const rollerWindowWindowWidth = document.getElementById('roller-window').clientWidth;
-            const cardWidth = 148;
-            const targetIndex = 30;
-            const targetLeft = -((targetIndex * cardWidth) - (rollerWindowWindowWidth / 2) + (cardWidth / 2));
-
-            setTimeout(() => {
-                content.style.transition = 'left 4s cubic-bezier(0.15, 0.85, 0.25, 1)';
-                content.style.left = `${targetLeft}px`;
-            }, 50);
-
-            setTimeout(() => {
-                isSpinning = false;
-                btn.disabled = true;
-                btn.innerText = 'ОТКРЫТЬ КЕЙС';
-                
-                document.getElementById('win-modal-icon').innerHTML = getIconHtml(winningPrize.icon, '52px');
-                document.getElementById('win-modal-title').innerText = winningPrize.name;
-                document.getElementById('win-modal-promo').innerText = serverData.promo;
-                document.getElementById('win-modal').style.display = 'flex';
-                
-                if (window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
-                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                }
-            }, 4100);
         }
     </script>
 </body>
