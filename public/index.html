@@ -1,4 +1,4 @@
-[source: 22]<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -6,7 +6,7 @@
     <title>CASE LOUNGE</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="config.js"></script>
-   <style>
+    <style>
         :root {
             --primary: #E5A93B;
             --primary-glow: rgba(229, 169, 59, 0.15);
@@ -28,12 +28,13 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             padding: 12px 16px 16px 16px;
             box-sizing: border-box;
-            justify-content: space-between;
+            justify-content: flex-start;
             -webkit-font-smoothing: antialiased;
             background-image: 
                 radial-gradient(circle at 50% -10%, rgba(229, 169, 59, 0.07) 0%, transparent 50%),
@@ -139,8 +140,8 @@
             width: 100%;
             flex: 1;
             box-sizing: border-box;
-            overflow: hidden;
-            justify-content: center;
+            overflow: visible;
+            justify-content: flex-start;
             z-index: 10;
             position: relative;
         }
@@ -159,7 +160,7 @@
             align-items: center;
             justify-content: center;
             font-size: 52px;
-            margin-bottom: 24px;
+            margin: 24px 0;
             box-shadow: 
                 0 20px 40px rgba(0,0,0,0.6), 
                 inset 0 1px 1px rgba(255,255,255,0.08);
@@ -185,7 +186,7 @@
             justify-content: center;
             align-items: center;
             flex-shrink: 0;
-            margin: 8px 0;
+            margin: 16px 0;
         }
 
         .roller-window {
@@ -308,7 +309,7 @@
             flex-direction: column;
             align-items: center;
             flex-shrink: 0;
-            margin-top: 12px;
+            margin-top: 20px;
             z-index: 20;
             position: relative;
         }
@@ -363,9 +364,6 @@
 
         .inventory-wrapper {
             width: 100%;
-            flex: 1;
-            overflow-y: auto;
-            padding-right: 2px;
             box-sizing: border-box;
             margin-top: 4px;
         }
@@ -375,7 +373,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            overflow: visible; /* Исправлено: предотвращает обрезание меню */
+            overflow: visible;
         }
 
         .inventory-card, .admin-card {
@@ -393,8 +391,8 @@
             width: 100%;
             box-sizing: border-box;
             transition: all 0.2s ease;
-            position: relative; /* Исправлено для правильного позиционирования меню */
-            overflow: visible;  /* Исправлено для предотвращения наложения */
+            position: relative;
+            overflow: visible;
         }
         .inventory-card:hover, .admin-card:hover {
             border-color: rgba(255,255,255,0.08);
@@ -547,7 +545,7 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 14px;
             box-shadow: 0 16px 40px rgba(0,0,0,0.9);
-            z-index: 9999; /* Повышен z-index, чтобы меню было поверх всех элементов */
+            z-index: 9999;
             box-sizing: border-box;
             padding: 6px;
             flex-direction: column;
@@ -590,7 +588,7 @@
             gap: 4px;
             box-sizing: border-box;
             flex-shrink: 0;
-            margin-top: 8px;
+            margin-top: 16px;
             z-index: 20;
             position: relative;
             box-shadow: 0 10px 30px rgba(0,0,0,0.4);
@@ -717,7 +715,7 @@
         </div>
     </div>
 
-    <div id="section-inventory" class="view-section" style="justify-content: flex-start;">
+    <div id="section-inventory" class="view-section">
         <div class="inventory-wrapper">
             <div class="inventory-list" id="inventory-list">
                 <div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 20px;">Загрузка инвентаря...</div>
@@ -725,7 +723,7 @@
         </div>
     </div>
 
-    <div id="section-admin" class="view-section" style="justify-content: flex-start;">
+    <div id="section-admin" class="view-section">
         <div class="admin-header-row">
             <div class="admin-section-title" id="current-admin-title">📦 Призы</div>
             <div class="admin-menu-wrap">
@@ -741,13 +739,13 @@
             </div>
         </div>
 
-        <div id="admin-sub-prizes" class="admin-sub-section" style="display:flex; flex-direction:column; width:100%; flex:1; overflow:hidden;">
-            <div class="admin-list" id="admin-prizes-list" style="flex:1; overflow-y:auto; padding-right: 4px;">
+        <div id="admin-sub-prizes" class="admin-sub-section" style="display:flex; flex-direction:column; width:100%;">
+            <div class="admin-list" id="admin-prizes-list">
                 <div style="text-align:center; color:var(--text-muted);">Загрузка...</div>
             </div>
         </div>
 
-        <div id="admin-sub-add-prize" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto;">
+        <div id="admin-sub-add-prize" class="admin-sub-section" style="display:none; flex-direction:column; width:100%;">
             <div class="add-prize-form" style="margin-top:0;">
                 <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Создание нового приза</div>
                 <input type="text" id="new-name" placeholder="Название приза" autocomplete="off">
@@ -759,13 +757,13 @@
             </div>
         </div>
 
-        <div id="admin-sub-stats" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1;">
+        <div id="admin-sub-stats" class="admin-sub-section" style="display:none; flex-direction:column; width:100%;">
             <div class="stats-grid" id="stats-content">
                 <div style="text-align:center; color:var(--text-muted); font-size:12px; padding:20px;">Загрузка...</div>
             </div>
         </div>
 
-        <div id="admin-sub-ban" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%; flex:1; overflow:hidden;">
+        <div id="admin-sub-ban" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%;">
             <div class="add-prize-form" style="flex-shrink:0;">
                 <input type="text" id="ban-username" placeholder="Юзернейм (@username) или ID" autocomplete="off">
                 <div style="display: flex; gap: 8px;">
@@ -774,21 +772,21 @@
                 </div>
                 <button class="spin-btn" style="padding:11px; font-size:11px; background:var(--card-bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="resetTimer()">Сбросить таймер</button>
             </div>
-            <div class="admin-list" id="banned-users-list" style="margin-top:10px; flex:1; overflow-y:auto;"></div>
+            <div class="admin-list" id="banned-users-list" style="margin-top:10px;"></div>
         </div>
 
-        <div id="admin-sub-users" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%; flex:1; overflow:hidden;">
-            <div class="admin-list" id="all-users-list" style="flex:1; overflow-y:auto; padding-right: 4px;"></div>
+        <div id="admin-sub-users" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%;">
+            <div class="admin-list" id="all-users-list"></div>
         </div>
 
-        <div id="admin-sub-admins" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%; flex:1; overflow:hidden;">
+        <div id="admin-sub-admins" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%;">
             <div id="super-admin-section" style="display:none; width:100%; margin-bottom:10px; flex-shrink:0;">
                 <div class="add-prize-form" style="margin-top:0;">
                     <input type="text" id="new-admin-username" placeholder="Админ (@username или ID)" autocomplete="off">
                     <button class="spin-btn" style="padding:11px; font-size:11px; background:linear-gradient(135deg, rgba(255,77,77,0.3) 0%, rgba(255,77,77,0.15) 100%); color:var(--secondary); border:1px solid rgba(255,77,77,0.4);" onclick="addNewAdmin()">Назначить</button>
                 </div>
             </div>
-            <div class="admin-list" id="admins-list-container" style="flex:1; overflow-y:auto;"></div>
+            <div class="admin-list" id="admins-list-container"></div>
         </div>
     </div>
 
@@ -800,6 +798,7 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        tg.ready();
 
         const initData = tg.initData || '';
 
