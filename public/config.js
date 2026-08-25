@@ -1,5 +1,5 @@
-[source: 29]window.APP_CONFIG = {
-    clubLogoImage: "/logo.jpg", 
+window.APP_CONFIG = {
+    clubLogoImage: "", 
     clubLogoText: "", 
     caseImage: "📦", 
     homeBackground: "", 
