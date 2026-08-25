@@ -75,6 +75,13 @@ async function initDb() {
     )
   `);
 
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    )
+  `);
+
   const adminCheck = await db.execute(`SELECT COUNT(*) as count FROM admins`);
   if (adminCheck.rows[0].count === 0) {
     await db.execute({
@@ -181,6 +188,42 @@ app.get('/', (req, res) => {
 
 app.get('/ping', (req, res) => {
   res.status(200).send('pong');
+});
+
+// Публичный эндпоинт для получения глобальных настроек (фон, иконки) всеми пользователями
+app.get('/api/settings', async (req, res) => {
+  try {
+    const result = await db.execute(`SELECT * FROM settings`);
+    const settings = {};
+    for (const row of result.rows) {
+      settings[row.key] = row.value;
+    }
+    res.json(settings);
+  } catch (e) {
+    console.error('Settings Get Error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Сохранение настроек администратором
+app.post('/api/admin/settings', authMiddleware, async (req, res) => {
+  try {
+    const admin = await verifyAdminByTelegramUser(req.telegramUser);
+    if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
+
+    const { key, value } = req.body;
+    if (!key) return res.status(400).json({ error: 'Missing key' });
+
+    await db.execute({
+      sql: `INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)`,
+      args: [key, value || '']
+    });
+    await logAdminAction(req.telegramUser, 'UPDATE_SETTING', `Updated setting: ${key}`);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Settings Update Error:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/admin/upload-image', authMiddleware, async (req, res) => {
