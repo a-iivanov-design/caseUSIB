@@ -148,6 +148,33 @@
             display: flex;
         }
 
+        #section-case.view-section {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 16px;
+            position: relative;
+        }
+
+        #section-case.view-section::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(3, 4, 6, 0.75);
+            z-index: 1;
+            pointer-events: none;
+            display: none;
+        }
+
+        #section-case.view-section.has-custom-bg::after {
+            display: block;
+        }
+
+        #section-case.view-section > * {
+            position: relative;
+            z-index: 2;
+        }
+
         .case-preview-box {
             width: 128px;
             height: 128px;
@@ -738,6 +765,7 @@
                     <button class="admin-dropdown-item" id="subtab-ban" onclick="switchAdminSub('ban')">🛡️ Баны</button>
                     <button class="admin-dropdown-item" id="subtab-users" onclick="switchAdminSub('users')">👥 Игроки</button>
                     <button class="admin-dropdown-item" id="subtab-admins" onclick="switchAdminSub('admins')">🔑 Админы</button>
+                    <button class="admin-dropdown-item" id="subtab-background" onclick="switchAdminSub('background')">🖼️ Фон главной</button>
                 </div>
             </div>
         </div>
@@ -791,6 +819,23 @@
             </div>
             <div class="admin-list" id="admins-list-container" style="flex:1; overflow-y:auto;"></div>
         </div>
+
+        <div id="admin-sub-background" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto;">
+            <div class="add-prize-form" style="margin-top:0;">
+                <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Управление фоном главной страницы</div>
+                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">Загрузите картинку из галереи телефона или введите прямую ссылку.</p>
+                
+                <input type="file" id="bg-file-input" accept="image/*" style="display: none;" onchange="handleBgUpload(event)">
+                <button class="spin-btn" style="padding: 13px; font-size: 12px; margin-bottom: 8px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="document.getElementById('bg-file-input').click()">📁 Выбрать из галереи</button>
+                
+                <input type="text" id="bg-url-input" placeholder="Или введите прямую ссылку на картинку" autocomplete="off">
+                
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
+                    <button class="spin-btn" style="padding: 13px; font-size: 12px; flex: 1;" onclick="applyBackground()">Установить фон</button>
+                    <button class="spin-btn" style="padding: 13px; font-size: 12px; flex: 1; background: rgba(224,62,62,0.1); color: var(--secondary); border: 1px solid rgba(224,62,62,0.2);" onclick="removeBackground()">Удалить фон</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="bottom-nav-toggle" id="bottom-nav-toggle">
@@ -825,6 +870,21 @@
             }
             return icon;
         }
+
+        function initHomeBackground() {
+            const savedBg = localStorage.getItem('home_custom_background') || (window.APP_CONFIG && window.APP_CONFIG.homeBackground);
+            const caseSection = document.getElementById('section-case');
+            
+            if (savedBg && savedBg.trim() !== '') {
+                caseSection.style.backgroundImage = `url('${savedBg}')`;
+                caseSection.classList.add('has-custom-bg');
+            } else {
+                caseSection.style.backgroundImage = 'none';
+                caseSection.classList.remove('has-custom-bg');
+            }
+        }
+
+        initHomeBackground();
 
         if (window.APP_CONFIG) {
             const cfg = window.APP_CONFIG;
@@ -971,7 +1031,7 @@
         });
 
         function switchAdminSub(sub) {
-            ['prizes', 'add-prize', 'stats', 'ban', 'users', 'admins'].forEach(s => {
+            ['prizes', 'add-prize', 'stats', 'ban', 'users', 'admins', 'background'].forEach(s => {
                 const btn = document.getElementById(`subtab-${s}`);
                 const section = document.getElementById(`admin-sub-${s}`);
                 if (btn) btn.classList.remove('active');
@@ -992,7 +1052,8 @@
                 'stats': '📊 Статистика',
                 'ban': '🛡️ Баны',
                 'users': '👥 Игроки',
-                'admins': '🔑 Админы'
+                'admins': '🔑 Админы',
+                'background': '🖼️ Фон главной'
             };
             const titleEl = document.getElementById('current-admin-title');
             if (titleEl && titles[sub]) titleEl.innerText = titles[sub];
@@ -1001,6 +1062,57 @@
             if (sub === 'ban') loadBannedUsers();
             if (sub === 'users') loadAllUsers();
             if (sub === 'admins') loadAdminsList();
+        }
+
+        async function handleBgUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Image = e.target.result;
+                try {
+                    const res = await fetch('/api/admin/upload-background', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ image: base64Image, filename: file.name })
+                    });
+                    const data = await res.json();
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    document.getElementById('bg-url-input').value = data.url;
+                    alert('Картинка успешно загружена! Нажмите «Установить фон».');
+                } catch (err) {
+                    alert('Ошибка загрузки файла');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function applyBackground() {
+            const url = document.getElementById('bg-url-input').value.trim();
+            const caseSection = document.getElementById('section-case');
+
+            if (!url) {
+                alert('Введите ссылку или выберите файл');
+                return;
+            }
+
+            localStorage.setItem('home_custom_background', url);
+            caseSection.style.backgroundImage = `url('${url}')`;
+            caseSection.classList.add('has-custom-bg');
+            alert('Фон успешно изменен!');
+        }
+
+        function removeBackground() {
+            localStorage.removeItem('home_custom_background');
+            const caseSection = document.getElementById('section-case');
+            caseSection.style.backgroundImage = 'none';
+            caseSection.classList.remove('has-custom-bg');
+            document.getElementById('bg-url-input').value = '';
+            alert('Фон удален, возвращен стандартный стиль.');
         }
 
         function resetCasePreviewState() {
