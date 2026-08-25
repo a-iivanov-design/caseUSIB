@@ -3,13 +3,19 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@libsql/client';
 import crypto from 'crypto';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const BOT_TOKEN = process.env.BOT_TOKEN || '8858536573:AAEMimZ3ynfL9Z_4IJT-57JOlcecACWmye4';
 
@@ -147,6 +153,28 @@ app.get('/', (req, res) => {
 
 app.get('/ping', (req, res) => {
   res.status(200).send('pong');
+});
+
+app.post('/api/admin/upload-background', authMiddleware, async (req, res) => {
+  try {
+    const admin = await verifyAdminByTelegramUser(req.telegramUser);
+    if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
+
+    const { image, filename } = req.body;
+    if (!image) return res.status(400).json({ error: 'No image provided' });
+
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+    const ext = filename ? path.extname(filename) : '.jpg';
+    const uniqueName = `bg_${Date.now()}${ext}`;
+    const filePath = path.join(uploadsDir, uniqueName);
+
+    fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+
+    res.json({ success: true, url: `/uploads/${uniqueName}` });
+  } catch (e) {
+    console.error('Upload Error:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get('/api/status', authMiddleware, async (req, res) => {
@@ -578,37 +606,6 @@ app.post('/api/admin/remove-admin', authMiddleware, async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-import fs from 'fs';
-
-// Создаем папку uploads, если её нет
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Эндпоинт для загрузки фонового изображения
-app.post('/api/admin/upload-background', authMiddleware, async (req, res) => {
-  try {
-    const admin = await verifyAdminByTelegramUser(req.telegramUser);
-    if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
-
-    const { image, filename } = req.body;
-    if (!image) return res.status(400).json({ error: 'No image provided' });
-
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-    const ext = filename ? path.extname(filename) : '.jpg';
-    const uniqueName = `bg_${Date.now()}${ext}`;
-    const filePath = path.join(uploadsDir, uniqueName);
-
-    fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
-
-    res.json({ success: true, url: `/uploads/${uniqueName}` });
-  } catch (e) {
-    console.error('Upload Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
