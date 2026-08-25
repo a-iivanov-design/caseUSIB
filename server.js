@@ -11,8 +11,6 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Токен вашего Telegram бота (необходимо для безопасной проверки initData)
-// Укажите токен прямо здесь или передайте через переменную окружения BOT_TOKEN
 const BOT_TOKEN = process.env.BOT_TOKEN || '8858536573:AAEMimZ3ynfL9Z_4IJT-57JOlcecACWmye4';
 
 const db = createClient({
@@ -60,7 +58,7 @@ async function initDb() {
     )
   `);
 
-  await db.execute(`DELETE FROM users WHERE username IS NULL OR username = '' OR username = 'null'`);
+  // Убрано удаление пользователей без username, чтобы игроки без юзернейма не пропадали
 
   const adminCheck = await db.execute(`SELECT COUNT(*) as count FROM admins`);
   if (adminCheck.rows[0].count === 0) {
@@ -77,10 +75,8 @@ async function initDb() {
 }
 initDb();
 
-// Безопасная валидация Telegram WebApp initData
 function verifyTelegramWebAppData(initData) {
   if (!initData || BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') {
-    // Режим разработки, если токен не задан (но в продакшене лучше всегда использовать токен)
     if (BOT_TOKEN === 'YOUR_BOT_TOKEN_HERE') {
       try {
         const urlParams = new URLSearchParams(initData);
@@ -120,7 +116,6 @@ function verifyTelegramWebAppData(initData) {
   }
 }
 
-// Middleware для проверки авторизации пользователя
 async function authMiddleware(req, res, next) {
   const initData = req.headers['x-telegram-init-data'];
   const verification = verifyTelegramWebAppData(initData);
@@ -153,7 +148,6 @@ async function verifyAdminByTelegramUser(telegramUser) {
   };
 }
 
-// Роуты для пинга и проверки работоспособности (чтобы UptimeRobot не выдавал 502)
 app.get('/', (req, res) => {
   res.send('Case Lounge Server is active and running!');
 });
@@ -167,9 +161,10 @@ app.get('/api/status', authMiddleware, async (req, res) => {
     const userId = String(req.telegramUser.id);
     const cleanUsername = req.telegramUser.username ? req.telegramUser.username.replace('@', '').toLowerCase() : '';
 
+    // Ищем в первую очередь по уникальному ID
     let userRes = await db.execute({
-      sql: `SELECT * FROM users WHERE username = ? OR id = ?`,
-      args: [cleanUsername, userId]
+      sql: `SELECT * FROM users WHERE id = ?`,
+      args: [userId]
     });
 
     let user = userRes.rows[0];
@@ -229,8 +224,8 @@ app.post('/api/spin', authMiddleware, async (req, res) => {
     const cleanUsername = req.telegramUser.username ? req.telegramUser.username.replace('@', '').toLowerCase() : '';
 
     let userRes = await db.execute({
-      sql: `SELECT * FROM users WHERE username = ? OR id = ?`,
-      args: [cleanUsername, userId]
+      sql: `SELECT * FROM users WHERE id = ?`,
+      args: [userId]
     });
 
     let user = userRes.rows[0];
@@ -272,8 +267,8 @@ app.post('/api/spin', authMiddleware, async (req, res) => {
 
     if (user) {
       await db.execute({
-        sql: `UPDATE users SET last_spin = ?, id = ?, username = ? WHERE id = ? OR username = ?`,
-        args: [nowIso, userId, cleanUsername, userId, cleanUsername]
+        sql: `UPDATE users SET last_spin = ?, username = ? WHERE id = ?`,
+        args: [nowIso, cleanUsername, userId]
       });
     } else {
       await db.execute({
@@ -418,7 +413,7 @@ app.get('/api/admin/stats', authMiddleware, async (req, res) => {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
     if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
 
-    const usersCount = await db.execute(`SELECT COUNT(*) as count FROM users WHERE username IS NOT NULL AND username != ''`);
+    const usersCount = await db.execute(`SELECT COUNT(*) as count FROM users`);
     const bannedCount = await db.execute(`SELECT COUNT(*) as count FROM users WHERE is_banned = 1`);
     const spinsCount = await db.execute(`SELECT COUNT(*) as count FROM inventory`);
 
@@ -437,7 +432,7 @@ app.get('/api/admin/banned-list', authMiddleware, async (req, res) => {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
     if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
 
-    const banned = await db.execute(`SELECT username FROM users WHERE is_banned = 1 AND username IS NOT NULL AND LOWER(username) != 'ropogku'`);
+    const banned = await db.execute(`SELECT id, username FROM users WHERE is_banned = 1 AND LOWER(username) != 'ropogku'`);
     res.json({ bannedUsers: banned.rows });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -449,7 +444,7 @@ app.get('/api/admin/users-list', authMiddleware, async (req, res) => {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
     if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
 
-    const users = await db.execute(`SELECT id, username, is_banned FROM users WHERE username IS NOT NULL AND username != ''`);
+    const users = await db.execute(`SELECT id, username, is_banned FROM users`);
     res.json({ users: users.rows });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -461,16 +456,16 @@ app.post('/api/admin/ban', authMiddleware, async (req, res) => {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
     if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
 
-    const { targetUsername, banState } = req.body;
-    const cleanUser = targetUsername.replace('@', '').toLowerCase();
-    
-    if (cleanUser === 'ropogku') {
+    const { targetIdentifier, banState } = req.body; // Принимаем ID или username
+    const cleanId = String(targetIdentifier).replace('@', '').toLowerCase();
+
+    if (cleanId === 'ropogku' || cleanId === '8858536573') { // Пример защиты супер-админа
       return res.status(400).json({ error: 'Нельзя заблокировать главного администратора' });
     }
 
     await db.execute({
-      sql: `UPDATE users SET is_banned = ? WHERE LOWER(username) = ?`,
-      args: [Number(banState), cleanUser]
+      sql: `UPDATE users SET is_banned = ? WHERE id = ? OR LOWER(username) = ?`,
+      args: [Number(banState), String(targetIdentifier), cleanId]
     });
     res.json({ success: true });
   } catch (e) {
@@ -501,12 +496,11 @@ app.post('/api/admin/delete-user', authMiddleware, async (req, res) => {
         sql: `DELETE FROM inventory WHERE user_id = ?`,
         args: [foundUserId]
       });
+      await db.execute({
+        sql: `DELETE FROM users WHERE id = ?`,
+        args: [foundUserId]
+      });
     }
-
-    await db.execute({
-      sql: `DELETE FROM users WHERE LOWER(username) = ? OR id = ?`,
-      args: [cleanUser, String(targetIdentifier)]
-    });
 
     res.json({ success: true });
   } catch (e) {
@@ -519,11 +513,11 @@ app.post('/api/admin/reset-timer', authMiddleware, async (req, res) => {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
     if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
 
-    const { targetUsername } = req.body;
-    const cleanUser = targetUsername.replace('@', '').toLowerCase();
+    const { targetIdentifier } = req.body;
+    const cleanId = String(targetIdentifier).replace('@', '').toLowerCase();
     await db.execute({
-      sql: `UPDATE users SET last_spin = NULL WHERE LOWER(username) = ?`,
-      args: [cleanUser]
+      sql: `UPDATE users SET last_spin = NULL WHERE id = ? OR LOWER(username) = ?`,
+      args: [String(targetIdentifier), cleanId]
     });
     res.json({ success: true });
   } catch (e) {
@@ -581,7 +575,6 @@ app.post('/api/admin/remove-admin', authMiddleware, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-// ОБЯЗАТЕЛЬНО добавлено '0.0.0.0', чтобы Render принимал внешние запросы и не было ошибки 502
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
