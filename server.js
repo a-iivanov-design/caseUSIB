@@ -158,7 +158,7 @@ app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });
 
-app.post('/api/admin/upload-background', authMiddleware, async (req, res) => {
+app.post('/api/admin/upload-image', authMiddleware, async (req, res) => {
   try {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
     if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
@@ -168,7 +168,7 @@ app.post('/api/admin/upload-background', authMiddleware, async (req, res) => {
 
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     const ext = filename ? path.extname(filename) : '.jpg';
-    const uniqueName = `bg_${Date.now()}${ext}`;
+    const uniqueName = `img_${Date.now()}${ext}`;
     const filePath = path.join(uploadsDir, uniqueName);
 
     fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
