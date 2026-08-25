@@ -83,7 +83,9 @@ function verifyTelegramWebAppData(initData) {
         if (userObj.id) {
           return { isValid: true, user: userObj };
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('Auth parse error:', e);
+      }
     }
     return { isValid: false };
   }
@@ -111,6 +113,7 @@ function verifyTelegramWebAppData(initData) {
     const user = userStr ? JSON.parse(userStr) : null;
     return { isValid: true, user };
   } catch (e) {
+    console.error('Telegram data verification error:', e);
     return { isValid: false };
   }
 }
@@ -234,6 +237,7 @@ app.get('/api/admin/check', authMiddleware, async (req, res) => {
     const adminData = await verifyAdminByTelegramUser(req.telegramUser);
     res.json(adminData);
   } catch (e) {
+    console.error('Admin Check Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -347,6 +351,7 @@ app.get('/api/inventory', authMiddleware, async (req, res) => {
 
     res.json({ items: validItems });
   } catch (e) {
+    console.error('Inventory Get Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -364,6 +369,7 @@ app.post('/api/inventory/delete', authMiddleware, async (req, res) => {
 
     res.json({ success: true });
   } catch (e) {
+    console.error('Inventory Delete Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -376,6 +382,7 @@ app.get('/api/admin/prizes', authMiddleware, async (req, res) => {
     const prizesRes = await db.execute(`SELECT * FROM prizes`);
     res.json({ prizes: prizesRes.rows });
   } catch (e) {
+    console.error('Admin Prizes Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -392,6 +399,7 @@ app.post('/api/admin/add-prize', authMiddleware, async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
+    console.error('Add Prize Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -408,6 +416,7 @@ app.post('/api/admin/delete-prize', authMiddleware, async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
+    console.error('Delete Prize Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -424,6 +433,7 @@ app.post('/api/admin/update-prize', authMiddleware, async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
+    console.error('Update Prize Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -443,6 +453,7 @@ app.get('/api/admin/stats', authMiddleware, async (req, res) => {
       totalSpins: spinsCount.rows[0].count
     });
   } catch (e) {
+    console.error('Admin Stats Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -455,6 +466,7 @@ app.get('/api/admin/banned-list', authMiddleware, async (req, res) => {
     const banned = await db.execute(`SELECT id, username FROM users WHERE is_banned = 1 AND LOWER(username) != 'ropogku'`);
     res.json({ bannedUsers: banned.rows });
   } catch (e) {
+    console.error('Banned List Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -467,6 +479,7 @@ app.get('/api/admin/users-list', authMiddleware, async (req, res) => {
     const users = await db.execute(`SELECT id, username, is_banned FROM users`);
     res.json({ users: users.rows });
   } catch (e) {
+    console.error('Users List Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -489,6 +502,7 @@ app.post('/api/admin/ban', authMiddleware, async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
+    console.error('Ban Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -524,6 +538,7 @@ app.post('/api/admin/delete-user', authMiddleware, async (req, res) => {
 
     res.json({ success: true });
   } catch (e) {
+    console.error('Delete User Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -541,6 +556,7 @@ app.post('/api/admin/reset-timer', authMiddleware, async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
+    console.error('Reset Timer Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -553,6 +569,7 @@ app.get('/api/admin/list', authMiddleware, async (req, res) => {
     const admins = await db.execute(`SELECT id, username, is_super FROM admins`);
     res.json({ admins: admins.rows });
   } catch (e) {
+    console.error('Admin List Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -586,6 +603,7 @@ app.post('/api/admin/add-admin', authMiddleware, async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
+    console.error('Add Admin Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -606,6 +624,7 @@ app.post('/api/admin/remove-admin', authMiddleware, async (req, res) => {
     });
     res.json({ success: true });
   } catch (e) {
+    console.error('Remove Admin Error:', e);
     res.status(500).json({ error: e.message });
   }
 });
