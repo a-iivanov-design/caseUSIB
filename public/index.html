@@ -1,4 +1,4 @@
-[source: 32]<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -125,7 +125,7 @@
             display: flex;
         }
 
-        /* ИСПРАВЛЕНИЕ ФОНА НА ВСЮ СТРАНИЦУ */
+        /* ФОН НА ВСЮ СТРАНИЦУ ДЛЯ РУЛЕТКИ */
         #section-case.view-section {
             background-size: cover !important;
             background-position: center !important;
@@ -135,7 +135,7 @@
             left: 0;
             width: 100% !important;
             height: 100% !important;
-            padding: 80px 16px 80px 16px; /* отступы чтобы не перекрывать шапку и меню */
+            padding: 80px 16px 80px 16px;
             box-sizing: border-box;
             border-radius: 0;
         }
@@ -144,7 +144,7 @@
             content: '';
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(3, 4, 6, 0.75); /* Затемнение, чтобы текст и кейс читались */
+            background: rgba(3, 4, 6, 0.75);
             z-index: 1;
             pointer-events: none;
             display: none;
@@ -745,6 +745,7 @@
                     <button class="admin-dropdown-item" id="subtab-ban" onclick="switchAdminSub('ban')">🛡️ Баны</button>
                     <button class="admin-dropdown-item" id="subtab-users" onclick="switchAdminSub('users')">👥 Игроки</button>
                     <button class="admin-dropdown-item" id="subtab-admins" onclick="switchAdminSub('admins')">🔑 Админы</button>
+                    <button class="admin-dropdown-item" id="subtab-logs" onclick="switchAdminSub('logs')">📜 Логи админов</button>
                     <button class="admin-dropdown-item" id="subtab-background" onclick="switchAdminSub('background')">🖼️ Фон и кейс</button>
                 </div>
             </div>
@@ -805,7 +806,14 @@
             <div class="admin-list" id="admins-list-container" style="width: 100%;"></div>
         </div>
 
-        <!-- НОВЫЙ ИНТЕРФЕЙС УПРАВЛЕНИЯ ФОНОМ И ИКОНКОЙ КЕЙСА -->
+        <!-- РАЗДЕЛ ЛОГОВ АДМИНОВ -->
+        <div id="admin-sub-logs" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
+            <button class="spin-btn" style="padding: 10px; font-size: 11px; margin-bottom: 8px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="loadAdminLogs()">🔄 Обновить логи</button>
+            <div class="admin-list" id="admin-logs-list" style="width: 100%;">
+                <div style="text-align:center; color:var(--text-muted);">Загрузка логов...</div>
+            </div>
+        </div>
+
         <div id="admin-sub-background" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
             <div class="add-prize-form" style="margin-top:0;">
                 <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Фон главной страницы</div>
@@ -1033,7 +1041,7 @@
         });
 
         function switchAdminSub(sub) {
-            ['prizes', 'add-prize', 'stats', 'ban', 'users', 'admins', 'background'].forEach(s => {
+            ['prizes', 'add-prize', 'stats', 'ban', 'users', 'admins', 'logs', 'background'].forEach(s => {
                 const btn = document.getElementById(`subtab-${s}`);
                 const section = document.getElementById(`admin-sub-${s}`);
                 if (btn) btn.classList.remove('active');
@@ -1055,6 +1063,7 @@
                 'ban': '🛡️ Баны',
                 'users': '👥 Игроки',
                 'admins': '🔑 Админы',
+                'logs': '📜 Логи админов',
                 'background': '🖼️ Фон и кейс'
             };
             const titleEl = document.getElementById('current-admin-title');
@@ -1072,6 +1081,7 @@
             if (sub === 'ban') loadBannedUsers();
             if (sub === 'users') loadAllUsers();
             if (sub === 'admins') loadAdminsList();
+            if (sub === 'logs') loadAdminLogs();
         }
 
         async function handleBgUpload(event) {
@@ -1428,6 +1438,49 @@
                     listEl.appendChild(card);
                 });
             } catch (e) { console.error(e); }
+        }
+
+        async function loadAdminLogs() {
+            const listEl = document.getElementById('admin-logs-list');
+            if (!isSuperAdmin) {
+                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary); font-size:12px;">Доступно только супер-администратору</div>';
+                return;
+            }
+            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка логов...</div>';
+            try {
+                const res = await fetch('/api/admin/logs', { headers: getAuthHeaders() });
+                const data = await res.json();
+                if (data.error) {
+                    listEl.innerHTML = `<div style="text-align:center; color:var(--secondary);">${data.error}</div>`;
+                    return;
+                }
+                if (!data.logs || data.logs.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Логи пока пусты</div>';
+                    return;
+                }
+                listEl.innerHTML = '';
+                data.logs.forEach(log => {
+                    const card = document.createElement('div');
+                    card.className = 'admin-card';
+                    card.style.flexDirection = 'column';
+                    card.style.alignItems = 'flex-start';
+                    card.style.gap = '4px';
+
+                    const dateStr = new Date(log.created_at).toLocaleString('ru-RU');
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-width; width:100%; justify-content:space-between;">
+                            <span style="color:var(--primary); font-weight:700;">@${log.admin_username}</span>
+                            <span style="font-size:10px; color:var(--text-muted);">${dateStr}</span>
+                        </div>
+                        <div style="font-size:11px; font-weight:700; color:var(--text-main);">Действие: ${log.action}</div>
+                        <div style="font-size:10px; color:var(--text-muted); word-break:break-all;">Детали: ${log.details || '—'}</div>
+                    `;
+                    listEl.appendChild(card);
+                });
+            } catch (e) {
+                console.error(e);
+                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки логов</div>';
+            }
         }
 
         async function actionUserBan(targetIdentifier, banState) {
