@@ -1,11 +1,11 @@
 const express = require('express');
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { createClient } from '@libsql/client';
-import crypto from 'crypto';
+const path = require('path');
+const { fileURLToPath } = require('url');
+const { createClient } = require('@libsql/client');
+const crypto = require('crypto');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = __filename || '';
+const __dirname = path.dirname(process.mainModule ? process.mainModule.filename : __filename);
 
 const app = express();
 app.use(express.json());
@@ -50,7 +50,6 @@ async function initDb() {
     )
   `);
 
-  // Исправлено: таблица admins теперь хранит id пользователя для точной выдачи админки
   await db.execute(`
     CREATE TABLE IF NOT EXISTS admins (
       id TEXT PRIMARY KEY,
@@ -530,7 +529,6 @@ app.get('/api/admin/list', authMiddleware, async (req, res) => {
   }
 });
 
-// Исправлено: добавление админа теперь принимает и ID, и username
 app.post('/api/admin/add-admin', authMiddleware, async (req, res) => {
   try {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
@@ -541,7 +539,6 @@ app.post('/api/admin/add-admin', authMiddleware, async (req, res) => {
 
     const cleanId = String(targetIdentifier).replace('@', '').toLowerCase();
 
-    // Ищем пользователя в таблице users по ID или username, чтобы узнать его данные
     const userRes = await db.execute({
       sql: `SELECT id, username FROM users WHERE id = ? OR LOWER(username) = ?`,
       args: [String(targetIdentifier), cleanId]
