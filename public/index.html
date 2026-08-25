@@ -867,33 +867,38 @@
             return icon;
         }
 
-        function initHomeBackground() {
-            const savedBg = localStorage.getItem('home_custom_background') || (window.APP_CONFIG && window.APP_CONFIG.homeBackground);
-            const caseSection = document.getElementById('section-case');
-            
-            if (savedBg && savedBg.trim() !== '') {
-                caseSection.style.backgroundImage = `url('${savedBg}')`;
-                caseSection.classList.add('has-custom-bg');
-            } else {
-                caseSection.style.backgroundImage = 'none';
-                caseSection.classList.remove('has-custom-bg');
-            }
-        }
-
-        function initCaseIcon() {
-            const savedCase = localStorage.getItem('home_case_icon') || (window.APP_CONFIG && window.APP_CONFIG.caseImage);
-            const caseIconContainer = document.getElementById('case-preview-icon');
-            if (savedCase) {
-                if (savedCase.startsWith('http') || savedCase.startsWith('/')) {
-                    caseIconContainer.innerHTML = `<img src="${savedCase}" alt="Case">`;
+        // Загрузка глобальных настроек с сервера для всех пользователей
+        async function loadAppSettings() {
+            try {
+                const res = await fetch('/api/settings');
+                const settings = await res.json();
+                
+                const savedBg = settings.homeBackground || (window.APP_CONFIG && window.APP_CONFIG.homeBackground);
+                const caseSection = document.getElementById('section-case');
+                
+                if (savedBg && savedBg.trim() !== '') {
+                    caseSection.style.backgroundImage = `url('${savedBg}')`;
+                    caseSection.classList.add('has-custom-bg');
                 } else {
-                    caseIconContainer.innerText = savedCase;
+                    caseSection.style.backgroundImage = 'none';
+                    caseSection.classList.remove('has-custom-bg');
                 }
+
+                const savedCase = settings.caseImage || (window.APP_CONFIG && window.APP_CONFIG.caseImage);
+                const caseIconContainer = document.getElementById('case-preview-icon');
+                if (savedCase) {
+                    if (savedCase.startsWith('http') || savedCase.startsWith('/')) {
+                        caseIconContainer.innerHTML = `<img src="${savedCase}" alt="Case">`;
+                    } else {
+                        caseIconContainer.innerText = savedCase;
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load app settings:', e);
             }
         }
 
-        initHomeBackground();
-        initCaseIcon();
+        loadAppSettings();
 
         if (window.APP_CONFIG) {
             const cfg = window.APP_CONFIG;
@@ -1159,46 +1164,71 @@
             reader.readAsDataURL(file);
         }
 
-        function applyBackground() {
+        async function applyBackground() {
             const url = document.getElementById('bg-url-input').value.trim();
-            const caseSection = document.getElementById('section-case');
-
             if (!url) {
                 alert('Введите ссылку или выберите файл');
                 return;
             }
 
-            localStorage.setItem('home_custom_background', url);
-            caseSection.style.backgroundImage = `url('${url}')`;
-            caseSection.classList.add('has-custom-bg');
-            alert('Фон успешно изменен!');
+            try {
+                const res = await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ key: 'homeBackground', value: url })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+
+                loadAppSettings();
+                alert('Фон успешно изменен для всех пользователей!');
+            } catch (err) {
+                console.error(err);
+                alert('Ошибка сохранения фона');
+            }
         }
 
-        function removeBackground() {
-            localStorage.removeItem('home_custom_background');
-            const caseSection = document.getElementById('section-case');
-            caseSection.style.backgroundImage = 'none';
-            caseSection.classList.remove('has-custom-bg');
-            document.getElementById('bg-url-input').value = '';
-            alert('Фон удален.');
+        async function removeBackground() {
+            try {
+                const res = await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ key: 'homeBackground', value: '' })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+
+                document.getElementById('bg-url-input').value = '';
+                loadAppSettings();
+                alert('Фон удален для всех пользователей.');
+            } catch (err) {
+                console.error(err);
+                alert('Ошибка удаления фона');
+            }
         }
 
-        function applyCaseIcon() {
+        async function applyCaseIcon() {
             const url = document.getElementById('case-url-input').value.trim();
-            const caseIconContainer = document.getElementById('case-preview-icon');
-
             if (!url) {
                 alert('Введите ссылку, эмодзи или выберите файл');
                 return;
             }
 
-            localStorage.setItem('home_case_icon', url);
-            if (url.startsWith('http') || url.startsWith('/')) {
-                caseIconContainer.innerHTML = `<img src="${url}" alt="Case">`;
-            } else {
-                caseIconContainer.innerText = url;
+            try {
+                const res = await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ key: 'caseImage', value: url })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+
+                loadAppSettings();
+                alert('Иконка главного кейса успешно обновлена для всех пользователей!');
+            } catch (err) {
+                console.error(err);
+                alert('Ошибка сохранения иконки кейса');
             }
-            alert('Иконка главного кейса успешно обновлена!');
         }
 
         function resetCasePreviewState() {
