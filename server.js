@@ -1,4 +1,4 @@
-[source: 20]import express from 'express';
+const express = require('express');
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@libsql/client';
