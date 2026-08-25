@@ -547,7 +547,7 @@ app.post('/api/admin/add-admin', authMiddleware, async (req, res) => {
     let adminId = String(targetIdentifier);
     let adminUsername = cleanId;
 
-    if (userRes.rows.length` rows.length > 0) {
+    if (userRes.rows.length > 0) {
       adminId = userRes.rows[0].id;
       adminUsername = userRes.rows[0].username || adminId;
     }
