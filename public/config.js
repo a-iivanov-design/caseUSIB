@@ -1,4 +1,4 @@
-window.APP_CONFIG = {
+[source: 29]window.APP_CONFIG = {
     clubLogoImage: "/logo.jpg", 
     clubLogoText: "CASE <span>LOUNGE</span>", 
     caseImage: "📦", 
