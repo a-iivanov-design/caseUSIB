@@ -1,4 +1,4 @@
-import express from 'express';
+[source: 16]import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@libsql/client';
@@ -57,8 +57,6 @@ async function initDb() {
       is_super INTEGER DEFAULT 0
     )
   `);
-
-  // Убрано удаление пользователей без username, чтобы игроки без юзернейма не пропадали
 
   const adminCheck = await db.execute(`SELECT COUNT(*) as count FROM admins`);
   if (adminCheck.rows[0].count === 0) {
@@ -161,7 +159,6 @@ app.get('/api/status', authMiddleware, async (req, res) => {
     const userId = String(req.telegramUser.id);
     const cleanUsername = req.telegramUser.username ? req.telegramUser.username.replace('@', '').toLowerCase() : '';
 
-    // Ищем в первую очередь по уникальному ID
     let userRes = await db.execute({
       sql: `SELECT * FROM users WHERE id = ?`,
       args: [userId]
@@ -456,10 +453,10 @@ app.post('/api/admin/ban', authMiddleware, async (req, res) => {
     const admin = await verifyAdminByTelegramUser(req.telegramUser);
     if (!admin.isAdmin) return res.status(403).json({ error: 'Access denied' });
 
-    const { targetIdentifier, banState } = req.body; // Принимаем ID или username
+    const { targetIdentifier, banState } = req.body;
     const cleanId = String(targetIdentifier).replace('@', '').toLowerCase();
 
-    if (cleanId === 'ropogku' || cleanId === '8858536573') { // Пример защиты супер-админа
+    if (cleanId === 'ropogku' || cleanId === '8858536573') {
       return res.status(400).json({ error: 'Нельзя заблокировать главного администратора' });
     }
 
@@ -543,7 +540,22 @@ app.post('/api/admin/add-admin', authMiddleware, async (req, res) => {
     if (!admin.isSuper) return res.status(403).json({ error: 'Only super admin can add admins' });
 
     const { newAdminUsername } = req.body;
-    const cleanUser = newAdminUsername.replace('@', '').toLowerCase();
+    let cleanUser = String(newAdminUsername).replace('@', '').toLowerCase();
+
+    // Если передан ID пользователя, попытаемся найти его username в таблице users
+    if (/^\d+$/.test(cleanUser)) {
+      const uRes = await db.execute({
+        sql: `SELECT username FROM users WHERE id = ?`,
+        args: [cleanUser]
+      });
+      if (uRes.rows.length > 0 && uRes.rows[0].username) {
+        cleanUser = uRes.rows[0].username.toLowerCase();
+      } else {
+        // Если у пользователя нет юзернейма, сохраняем ID или подставляем заглушку, либо используем ID как идентификатор
+        cleanUser = `id_${cleanUser}`;
+      }
+    }
+
     await db.execute({
       sql: `INSERT OR IGNORE INTO admins (username, is_super) VALUES (?, 0)`,
       args: [cleanUser]
