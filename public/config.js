@@ -3,8 +3,8 @@ window.APP_CONFIG = {
     clubLogoText: "", 
     caseImage: "📦", 
     homeBackground: "", 
-    primaryColor: "#F5A623",
-    secondaryColor: "#FF4D4D",
+    primaryColor: "#C5A059",
+    secondaryColor: "#D9534F",
     backgroundColor: "#0A0B0E",
     cardBackground: "#14161C",
     borderColor: "#222630"
