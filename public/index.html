@@ -8,14 +8,14 @@
     <script src="config.js"></script>
    <style>
         :root {
-            --primary: #E5A93B; /* Благородное приглушенное золото вместо кислотного янтаря */
+            --primary: #E5A93B;
             --primary-glow: rgba(229, 169, 59, 0.15);
             --secondary: #E03E3E;
             --secondary-glow: rgba(224, 62, 62, 0.2);
-            --bg: #030406; /* Глубокий космический черный */
-            --card-bg: rgba(16, 18, 23, 0.65); /* Тончайшее матовое стекло */
+            --bg: #030406;
+            --card-bg: rgba(16, 18, 23, 0.65);
             --card-hover: rgba(23, 26, 33, 0.85);
-            --border-color: rgba(255, 255, 255, 0.04); /* Еле заметные, дорогие тонкие линии рамок */
+            --border-color: rgba(255, 255, 255, 0.04);
             --border-active: rgba(229, 169, 59, 0.3);
             --text-main: #F3F4F6;
             --text-muted: #6B7280;
@@ -40,7 +40,6 @@
                 radial-gradient(circle at 50% 110%, rgba(15, 23, 42, 0.4) 0%, transparent 60%);
         }
 
-        /* Убираем дешевые кислотные засветки, делаем атмосферу дорогой студийной */
         body::before {
             content: '';
             position: absolute;
@@ -91,7 +90,6 @@
             border-color: var(--border-active);
         }
 
-        /* Чистый логотип без лишней тяжести */
         .header-logo-container {
             width: 150px;
             height: 64px;
@@ -150,7 +148,6 @@
             display: flex;
         }
 
-        /* Премиальный бокс кейса с глубоким темным объемом */
         .case-preview-box {
             width: 128px;
             height: 128px;
@@ -233,7 +230,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        /* Приглушенные, дорогие цвета редкостей */
         .prize-item.prize-rare { background: linear-gradient(145deg, #0f1626 0%, #0a0e17 100%); border-color: rgba(59, 130, 246, 0.2); }
         .prize-item.prize-epic { background: linear-gradient(145deg, #191024 0%, #0f0a17 100%); border-color: rgba(168, 85, 247, 0.2); }
         .prize-item.prize-legendary { background: linear-gradient(145deg, #241a0d 0%, #140f07 100%); border-color: rgba(229, 169, 59, 0.35); }
@@ -317,7 +313,6 @@
             position: relative;
         }
 
-        /* Премиальная кнопка сдержанного золотого оттенка */
         button.spin-btn {
             width: 100%;
             background: linear-gradient(135deg, #f0b44d 0%, #e5a93b 50%, #c78d24 100%);
@@ -769,7 +764,7 @@
 
         <div id="admin-sub-ban" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%; flex:1; overflow:hidden;">
             <div class="add-prize-form" style="flex-shrink:0;">
-                <input type="text" id="ban-username" placeholder="Юзернейм (@username)" autocomplete="off">
+                <input type="text" id="ban-username" placeholder="Юзернейм (@username) или ID" autocomplete="off">
                 <div style="display: flex; gap: 8px;">
                     <button class="spin-btn" style="padding:11px; font-size:11px; background:linear-gradient(135deg, rgba(255,77,77,0.3) 0%, rgba(255,77,77,0.15) 100%); color:var(--secondary); border:1px solid rgba(255,77,77,0.4);" onclick="setBanStatus(1)">Бан</button>
                     <button class="spin-btn" style="padding:11px; font-size:11px; background:var(--card-bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="setBanStatus(0)">Разбан</button>
@@ -810,6 +805,14 @@
                 'Content-Type': 'application/json',
                 'X-Telegram-Init-Data': initData
             };
+        }
+
+        // Вспомогательная функция для отображения: если есть username, показываем его, иначе ID
+        function formatUserDisplay(username, id) {
+            if (username && username.trim() !== '') {
+                return `@${username.replace('@', '')}`;
+            }
+            return `ID: ${id}`;
         }
 
         function getIconHtml(icon, size = '34px') {
@@ -1161,10 +1164,11 @@
                 }
                 listEl.innerHTML = '';
                 data.bannedUsers.forEach(u => {
-                    if (u.username.toLowerCase() === 'ropogku') return;
+                    if (u.username && u.username.toLowerCase() === 'ropogku') return;
                     const card = document.createElement('div');
                     card.className = 'admin-card';
-                    card.innerHTML = `<div>@${u.username}</div><button type="button" style="background:var(--card-bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="quickUnban('${u.username}')">Разбан</button>`;
+                    const displayName = formatUserDisplay(u.username, u.id);
+                    card.innerHTML = `<div>${displayName}</div><button type="button" style="background:var(--card-bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="quickUnban('${u.id}')">Разбан</button>`;
                     listEl.appendChild(card);
                 });
             } catch (e) {}
@@ -1181,10 +1185,9 @@
                 }
                 listEl.innerHTML = '';
                 data.users.forEach(u => {
-                    const isRopogkuUser = u.username && u.username.toLowerCase() === 'ropogku';
-                    const displayName = u.username ? `@${u.username}` : `ID: ${u.id}`;
-                    const targetIdentifier = u.username || u.id;
-                    const cleanUser = u.username ? u.username : '';
+                    const isRopogkuUser = (u.username && u.username.toLowerCase() === 'ropogku') || u.id === 'ropogku';
+                    const displayName = formatUserDisplay(u.username, u.id);
+                    const targetIdentifier = u.id; // Передаем ID как надежный идентификатор
 
                     const card = document.createElement('div');
                     card.className = 'admin-card';
@@ -1195,10 +1198,10 @@
                             <div class="user-menu-wrap" style="position:relative;">
                                 <button type="button" class="admin-dots-btn" onclick="toggleUserMenu(event, '${targetIdentifier}')">⚙️</button>
                                 <div class="user-dropdown-menu" id="user-menu-${targetIdentifier}">
-                                    <button type="button" class="admin-dropdown-item" style="color:var(--secondary);" onclick="actionUserBan('${cleanUser}', 1)">🛡️ Забанить</button>
-                                    <button type="button" class="admin-dropdown-item" onclick="actionUserBan('${cleanUser}', 0)">✅ Разбанить</button>
-                                    <button type="button" class="admin-dropdown-item" onclick="actionResetTimer('${cleanUser}')">⏳ Сбросить таймер</button>
-                                    <button type="button" class="admin-dropdown-item" onclick="actionMakeAdmin('${cleanUser}')">🔑 Назначить админом</button>
+                                    <button type="button" class="admin-dropdown-item" style="color:var(--secondary);" onclick="actionUserBan('${targetIdentifier}', 1)">🛡️ Забанить</button>
+                                    <button type="button" class="admin-dropdown-item" onclick="actionUserBan('${targetIdentifier}', 0)">✅ Разбанить</button>
+                                    <button type="button" class="admin-dropdown-item" onclick="actionResetTimer('${targetIdentifier}')">⏳ Сбросить таймер</button>
+                                    ${u.username ? `<button type="button" class="admin-dropdown-item" onclick="actionMakeAdmin('${u.username}')">🔑 Назначить админом</button>` : ''}
                                     <button type="button" class="admin-dropdown-item" style="color:var(--secondary);" onclick="deleteUser('${targetIdentifier}')">🗑️ Удалить</button>
                                 </div>
                             </div>
@@ -1216,12 +1219,11 @@
             } catch (e) {}
         }
 
-        async function actionUserBan(targetUsername, banState) {
-            if (!targetUsername) return alert('У пользователя нет username');
+        async function actionUserBan(targetIdentifier, banState) {
             const res = await fetch('/api/admin/ban', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ targetUsername, banState })
+                body: JSON.stringify({ targetIdentifier, banState })
             });
             const data = await res.json();
             if (data.error) { alert(data.error); return; }
@@ -1229,12 +1231,11 @@
             loadAllUsers();
         }
 
-        async function actionResetTimer(targetUsername) {
-            if (!targetUsername) return alert('У пользователя нет username');
+        async function actionResetTimer(targetIdentifier) {
             const res = await fetch('/api/admin/reset-timer', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ targetUsername })
+                body: JSON.stringify({ targetIdentifier })
             });
             const data = await res.json();
             if (data.error) { alert(data.error); return; }
@@ -1276,12 +1277,12 @@
         }
 
         async function setBanStatus(banState) {
-            const targetUsername = document.getElementById('ban-username').value;
-            if (!targetUsername) return;
+            const targetIdentifier = document.getElementById('ban-username').value;
+            if (!targetIdentifier) return;
             const res = await fetch('/api/admin/ban', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ targetUsername, banState })
+                body: JSON.stringify({ targetIdentifier, banState })
             });
             const data = await res.json();
             if (data.error) { alert(data.error); return; }
@@ -1290,21 +1291,21 @@
         }
 
         async function resetTimer() {
-            const targetUsername = document.getElementById('ban-username').value;
-            if (!targetUsername) return;
+            const targetIdentifier = document.getElementById('ban-username').value;
+            if (!targetIdentifier) return;
             await fetch('/api/admin/reset-timer', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ targetUsername })
+                body: JSON.stringify({ targetIdentifier })
             });
             alert('Таймер сброшен');
         }
 
-        async function quickUnban(targetUsername) {
+        async function quickUnban(targetIdentifier) {
             await fetch('/api/admin/ban', {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ targetUsername, banState: 0 })
+                body: JSON.stringify({ targetIdentifier, banState: 0 })
             });
             loadBannedUsers();
         }
