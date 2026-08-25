@@ -190,7 +190,7 @@ app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });
 
-// Публичный эндпоинт для получения глобальных настроек (фон, иконки) всеми пользователями
+// Публичный эндпоинт для получения глобальных настроек всеми пользователями
 app.get('/api/settings', async (req, res) => {
   try {
     const result = await db.execute(`SELECT * FROM settings`);
