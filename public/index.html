@@ -152,9 +152,8 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            background-attachment: fixed;
-            border-radius: 16px;
             position: relative;
+            border-radius: 16px;
         }
 
         #section-case.view-section::after {
@@ -771,17 +770,21 @@
             </div>
         </div>
 
-        <div id="admin-sub-prizes" class="admin-sub-section" style="display:flex; flex-direction:column; width:100%; flex:1; overflow:hidden;">
-            <div class="admin-list" id="admin-prizes-list" style="flex:1; overflow-y:auto; padding-right: 4px;">
+        <div id="admin-sub-prizes" class="admin-sub-section" style="display:flex; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
+            <div class="admin-list" id="admin-prizes-list" style="width: 100%;">
                 <div style="text-align:center; color:var(--text-muted);">Загрузка...</div>
             </div>
         </div>
 
-        <div id="admin-sub-add-prize" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto;">
+        <div id="admin-sub-add-prize" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
             <div class="add-prize-form" style="margin-top:0;">
                 <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Создание нового приза</div>
                 <input type="text" id="new-name" placeholder="Название приза" autocomplete="off">
-                <input type="text" id="new-icon" placeholder="Иконка (эмодзи или ссылка)" autocomplete="off">
+                
+                <input type="file" id="prize-file-input" accept="image/*" style="display: none;" onchange="handlePrizeImageUpload(event)">
+                <button class="spin-btn" style="padding: 11px; font-size: 11px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="document.getElementById('prize-file-input').click()">📁 Выбрать картинку для приза</button>
+                
+                <input type="text" id="new-icon" placeholder="Иконка (эмодзи или ссылка /uploads/...)" autocomplete="off">
                 <input type="text" id="new-rarity" placeholder="Редкость (common/rare/epic/legendary)" autocomplete="off">
                 <input type="number" id="new-weight" placeholder="Шанс (вес)" autocomplete="off">
                 <input type="text" id="new-promo" placeholder="Префикс промокода" autocomplete="off">
@@ -789,14 +792,14 @@
             </div>
         </div>
 
-        <div id="admin-sub-stats" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1;">
+        <div id="admin-sub-stats" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
             <button class="spin-btn" style="padding: 10px; font-size: 11px; margin-bottom: 8px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="loadStats()">🔄 Обновить статистику</button>
             <div class="stats-grid" id="stats-content">
                 <div style="text-align:center; color:var(--text-muted); font-size:12px; padding:20px;">Загрузка...</div>
             </div>
         </div>
 
-        <div id="admin-sub-ban" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%; flex:1; overflow:hidden;">
+        <div id="admin-sub-ban" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
             <div class="add-prize-form" style="flex-shrink:0;">
                 <input type="text" id="ban-username" placeholder="Юзернейм (@username) или ID" autocomplete="off">
                 <div style="display: flex; gap: 8px;">
@@ -805,24 +808,24 @@
                 </div>
                 <button class="spin-btn" style="padding:11px; font-size:11px; background:var(--card-bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="resetTimer()">Сбросить таймер</button>
             </div>
-            <div class="admin-list" id="banned-users-list" style="margin-top:10px; flex:1; overflow-y:auto;"></div>
+            <div class="admin-list" id="banned-users-list" style="margin-top:10px; width: 100%;"></div>
         </div>
 
-        <div id="admin-sub-users" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%; flex:1; overflow:hidden;">
-            <div class="admin-list" id="all-users-list" style="flex:1; overflow-y:auto; padding-right: 4px;"></div>
+        <div id="admin-sub-users" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
+            <div class="admin-list" id="all-users-list" style="width: 100%;"></div>
         </div>
 
-        <div id="admin-sub-admins" class="admin-sub-section" style="display:none; flex-direction:column; align-items:center; width:100%; flex:1; overflow:hidden;">
+        <div id="admin-sub-admins" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
             <div id="super-admin-section" style="display:none; width:100%; margin-bottom:10px; flex-shrink:0;">
                 <div class="add-prize-form" style="margin-top:0;">
                     <input type="text" id="new-admin-username" placeholder="Админ (@username или ID)" autocomplete="off">
                     <button class="spin-btn" style="padding:11px; font-size:11px; background:linear-gradient(135deg, rgba(255,77,77,0.3) 0%, rgba(255,77,77,0.15) 100%); color:var(--secondary); border:1px solid rgba(255,77,77,0.4);" onclick="addNewAdmin()">Назначить</button>
                 </div>
             </div>
-            <div class="admin-list" id="admins-list-container" style="flex:1; overflow-y:auto;"></div>
+            <div class="admin-list" id="admins-list-container" style="width: 100%;"></div>
         </div>
 
-        <div id="admin-sub-background" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto;">
+        <div id="admin-sub-background" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
             <div class="add-prize-form" style="margin-top:0;">
                 <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Управление фоном главной страницы</div>
                 <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">Загрузите картинку из галереи телефона или введите прямую ссылку.</p>
@@ -1077,7 +1080,7 @@
 
             if (sub === 'stats') {
                 loadStats();
-                statsInterval = setInterval(loadStats, 5000); // Автообновление каждые 5 секунд
+                statsInterval = setInterval(loadStats, 5000);
             }
             if (sub === 'ban') loadBannedUsers();
             if (sub === 'users') loadAllUsers();
@@ -1092,7 +1095,7 @@
             reader.onload = async function(e) {
                 const base64Image = e.target.result;
                 try {
-                    const res = await fetch('/api/admin/upload-background', {
+                    const res = await fetch('/api/admin/upload-image', {
                         method: 'POST',
                         headers: getAuthHeaders(),
                         body: JSON.stringify({ image: base64Image, filename: file.name })
@@ -1106,7 +1109,35 @@
                     alert('Картинка успешно загружена! Нажмите «Установить фон».');
                 } catch (err) {
                     console.error('Background upload network error:', err);
-                    alert('Ошибка загрузки файла (проблема сети)');
+                    alert('Ошибка загрузки файла');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function handlePrizeImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Image = e.target.result;
+                try {
+                    const res = await fetch('/api/admin/upload-image', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ image: base64Image, filename: file.name })
+                    });
+                    const data = await res.json();
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    document.getElementById('new-icon').value = data.url;
+                    alert('Картинка приза успешно загружена!');
+                } catch (err) {
+                    console.error('Prize image upload error:', err);
+                    alert('Ошибка загрузки файла');
                 }
             };
             reader.readAsDataURL(file);
@@ -1227,7 +1258,7 @@
                 }
             } catch (err) { 
                 console.error('Inventory delete network error:', err);
-                alert('Ошибка удаления (проблема сети)'); 
+                alert('Ошибка удаления'); 
             }
         }
 
@@ -1395,7 +1426,7 @@
                 loadAllUsers();
             } catch (e) {
                 console.error('Action ban network error:', e);
-                alert('Ошибка сети при попытке изменения бана');
+                alert('Ошибка сети');
             }
         }
 
@@ -1411,7 +1442,7 @@
                 alert('Таймер открытия кейса сброшен');
             } catch (e) {
                 console.error('Reset timer network error:', e);
-                alert('Ошибка сети при сбросе таймера');
+                alert('Ошибка сети');
             }
         }
 
@@ -1428,7 +1459,7 @@
                 alert(`Пользователь успешно назначен администратором`);
             } catch (e) {
                 console.error('Make admin network error:', e);
-                alert('Ошибка сети при назначении администратора');
+                alert('Ошибка сети');
             }
         }
 
@@ -1517,7 +1548,7 @@
                 loadAllUsers();
             } catch (e) {
                 console.error('Delete user network error:', e);
-                alert('Ошибка сети при удалении пользователя');
+                alert('Ошибка сети');
             }
         }
 
@@ -1583,7 +1614,7 @@
                 loadAdminPrizes();
             } catch (e) {
                 console.error('Delete prize network error:', e);
-                alert('Ошибка сети при удалении приза');
+                alert('Ошибка сети');
             }
         }
 
@@ -1655,7 +1686,7 @@
                 isSpinning = false;
                 btn.disabled = false;
                 console.error('Spin network error:', e);
-                alert('Ошибка соединения с сервером при открытии кейса');
+                alert('Ошибка соединения с сервером');
                 return;
             }
 
