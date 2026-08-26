@@ -309,6 +309,7 @@ app.get('/api/admin/check', authMiddleware, async (req, res) => {
   }
 });
 
+// ИЗМЕНЕННЫЙ ЭНДПОИНТ РУЛЕТКИ (СИСТЕМА ЧЕСТНЫХ ПРОЦЕНТОВ)
 app.post('/api/spin', authMiddleware, async (req, res) => {
   try {
     const userId = String(req.telegramUser.id);
@@ -341,16 +342,26 @@ app.post('/api/spin', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Призы не настроены администратором' });
     }
 
-    let totalWeight = prizes.reduce((sum, p) => sum + p.weight, 0);
-    let randomWeight = Math.random() * totalWeight;
-    let chosenPrize = prizes[0];
+    // 1. Считаем общую сумму всех весов/процентов
+    let totalWeight = prizes.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
 
+    if (totalWeight <= 0) {
+      return res.status(400).json({ error: 'Суммарный шанс призов равен нулю. Настройте веса в админке.' });
+    }
+
+    // 2. Генерируем случайное число в диапазоне от 0 до totalWeight
+    let randomValue = Math.random() * totalWeight;
+    let chosenPrize = prizes[prizes.length - 1]; // Защитный вариант на случай погрешностей
+
+    // 3. Последовательно вычитаем веса, находя нужный приз (честные вероятности)
+    let currentSum = 0;
     for (let p of prizes) {
-      if (randomWeight < p.weight) {
+      const pWeight = Number(p.weight) || 0;
+      currentSum += pWeight;
+      if (randomValue <= currentSum) {
         chosenPrize = p;
         break;
       }
-      randomWeight -= p.weight;
     }
 
     const promoCode = `${chosenPrize.promo_prefix || 'CYBER'}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
