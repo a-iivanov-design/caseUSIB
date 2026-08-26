@@ -167,7 +167,7 @@ async function verifyAdminByTelegramUser(telegramUser) {
   const username = telegramUser.username ? telegramUser.username.replace('@', '').toLowerCase() : '';
   const userId = String(telegramUser.id);
   
-  if (username === 'ropogku' || userId === 'ropogku') {
+  if (username === 'ropogku' || userId === 'ropogku' || userId === 'ropogku_id') {
     return { isAdmin: true, isSuper: true };
   }
 
@@ -259,9 +259,13 @@ app.get('/api/status', authMiddleware, async (req, res) => {
 
     let user = userRes.rows[0];
 
+    // Автоматическая регистрация активного пользователя при первом запросе статуса
     if (!user) {
-      res.json({ isBanned: false, canSpin: true });
-      return;
+      await db.execute({
+        sql: `INSERT OR IGNORE INTO users (id, username, last_spin, is_banned) VALUES (?, ?, NULL, 0)`,
+        args: [userId, cleanUsername]
+      });
+      return res.json({ isBanned: false, canSpin: true });
     }
 
     if (user.is_banned === 1 && cleanUsername !== 'ropogku') {
@@ -309,7 +313,6 @@ app.get('/api/admin/check', authMiddleware, async (req, res) => {
   }
 });
 
-// ИЗМЕНЕННЫЙ ЭНДПОИНТ РУЛЕТКИ (СИСТЕМА ЧЕСТНЫХ ПРОЦЕНТОВ)
 app.post('/api/spin', authMiddleware, async (req, res) => {
   try {
     const userId = String(req.telegramUser.id);
@@ -342,18 +345,14 @@ app.post('/api/spin', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Призы не настроены администратором' });
     }
 
-    // 1. Считаем общую сумму всех весов/процентов
     let totalWeight = prizes.reduce((sum, p) => sum + (Number(p.weight) || 0), 0);
-
     if (totalWeight <= 0) {
       return res.status(400).json({ error: 'Суммарный шанс призов равен нулю. Настройте веса в админке.' });
     }
 
-    // 2. Генерируем случайное число в диапазоне от 0 до totalWeight
     let randomValue = Math.random() * totalWeight;
-    let chosenPrize = prizes[prizes.length - 1]; // Защитный вариант на случай погрешностей
+    let chosenPrize = prizes[prizes.length - 1];
 
-    // 3. Последовательно вычитаем веса, находя нужный приз (честные вероятности)
     let currentSum = 0;
     for (let p of prizes) {
       const pWeight = Number(p.weight) || 0;
@@ -572,7 +571,7 @@ app.post('/api/admin/ban', authMiddleware, async (req, res) => {
     const { targetIdentifier, banState } = req.body;
     const cleanId = String(targetIdentifier).replace('@', '').toLowerCase();
 
-    if (cleanId === 'ropogku' || cleanId === '8858536573') {
+    if (cleanId === 'ropogku' || cleanId === '8858536573' || cleanId === 'ropogku_id') {
       return res.status(400).json({ error: 'Нельзя заблокировать главного администратора' });
     }
 
@@ -596,7 +595,7 @@ app.post('/api/admin/delete-user', authMiddleware, async (req, res) => {
     const { targetIdentifier } = req.body;
     const cleanUser = targetIdentifier ? String(targetIdentifier).replace('@', '').toLowerCase() : '';
     
-    if (cleanUser === 'ropogku') {
+    if (cleanUser === 'ropogku' || cleanUser === 'ropogku_id') {
       return res.status(400).json({ error: 'Нельзя удалить главного администратора' });
     }
 
