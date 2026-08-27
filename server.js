@@ -259,7 +259,6 @@ app.get('/api/status', authMiddleware, async (req, res) => {
 
     let user = userRes.rows[0];
 
-    // Автоматическая регистрация активного пользователя при первом запросе статуса
     if (!user) {
       await db.execute({
         sql: `INSERT OR IGNORE INTO users (id, username, last_spin, is_banned) VALUES (?, ?, NULL, 0)`,
@@ -268,7 +267,8 @@ app.get('/api/status', authMiddleware, async (req, res) => {
       return res.json({ isBanned: false, canSpin: true });
     }
 
-    if (user.is_banned === 1 && cleanUsername !== 'ropogku') {
+    const adminCheck = await verifyAdminByTelegramUser(req.telegramUser);
+    if (user.is_banned === 1 && !adminCheck.isAdmin) {
       return res.json({ isBanned: true });
     }
 
@@ -324,8 +324,9 @@ app.post('/api/spin', authMiddleware, async (req, res) => {
     });
 
     let user = userRes.rows[0];
+    const adminCheck = await verifyAdminByTelegramUser(req.telegramUser);
 
-    if (user && user.is_banned === 1 && cleanUsername !== 'ropogku') {
+    if (user && user.is_banned === 1 && !adminCheck.isAdmin) {
       return res.status(403).json({ isBanned: true, error: 'Аккаунт заблокирован' });
     }
 
@@ -382,6 +383,13 @@ app.post('/api/spin', authMiddleware, async (req, res) => {
       sql: `INSERT INTO inventory (user_id, prize_name, icon, promo, won_at) VALUES (?, ?, ?, ?, ?)`,
       args: [userId, chosenPrize.name, chosenPrize.icon || '🎁', promoCode, nowIso]
     });
+
+    const userDisplayName = cleanUsername ? `@${cleanUsername}` : `ID: ${userId}`;
+    await logAdminAction(
+      req.telegramUser,
+      'OPEN_CASE',
+      `Пользователь ${userDisplayName} открыл кейс и выиграл приз: ${chosenPrize.name} (Промокод: ${promoCode})`
+    );
 
     res.json({
       prize: {
@@ -526,10 +534,20 @@ app.get('/api/admin/stats', authMiddleware, async (req, res) => {
     const bannedCount = await db.execute(`SELECT COUNT(*) as count FROM users WHERE is_banned = 1`);
     const spinsCount = await db.execute(`SELECT COUNT(*) as count FROM inventory`);
 
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayIso = startOfToday.toISOString();
+
+    const todaySpinsCount = await db.execute({
+      sql: `SELECT COUNT(*) as count FROM inventory WHERE won_at >= ?`,
+      args: [todayIso]
+    });
+
     res.json({
       totalUsers: usersCount.rows[0].count,
       bannedUsers: bannedCount.rows[0].count,
-      totalSpins: spinsCount.rows[0].count
+      totalSpins: spinsCount.rows[0].count,
+      todaySpins: todaySpinsCount.rows[0].count
     });
   } catch (e) {
     console.error('Admin Stats Error:', e);
