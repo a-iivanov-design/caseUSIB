@@ -1490,9 +1490,18 @@
                 statsBox.innerHTML = `
                     <div class="stat-card">
                         <div class="stat-card-info">
+                            <div class="stat-icon">🌅</div>
+                            <div>
+                                <div class="stat-title">Открыто кейсов сегодня</div>
+                                <div class="stat-value">${data.todaySpins}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-info">
                             <div class="stat-icon">🎁</div>
                             <div>
-                                <div class="stat-title">Открытий кейсов</div>
+                                <div class="stat-title">Всего открытий кейсов</div>
                                 <div class="stat-value">${data.totalSpins}</div>
                             </div>
                         </div>
@@ -1694,13 +1703,13 @@
 
         async function addPrize() {
             const name = document.getElementById('new-name').value.trim();
-            const icon = document.getElementById('new-icon').value.trim();
+            const icon = document.getElementById('new-icon').value.trim() || '🎁';
             const rarity = document.getElementById('new-rarity').value.trim() || 'common';
-            const weight = document.getElementById('new-weight').value.trim();
-            const promo_prefix = document.getElementById('new-promo').value.trim() || 'PROMO';
+            const weight = Number(document.getElementById('new-weight').value) || 1;
+            const promo_prefix = document.getElementById('new-promo').value.trim() || 'CYBER';
 
-            if (!name || !weight) {
-                alert('Заполните название и шанс приза');
+            if (!name) {
+                alert('Введите название приза');
                 return;
             }
 
@@ -1708,7 +1717,7 @@
                 const res = await fetch('/api/admin/add-prize', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ name, icon, rarity, weight: Number(weight), promo_prefix })
+                    body: JSON.stringify({ name, icon, rarity, weight, promo_prefix })
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
@@ -1721,13 +1730,15 @@
 
                 alert('Приз успешно добавлен!');
                 switchAdminSub('prizes');
+                loadAdminPrizes();
             } catch (e) {
+                console.error(e);
                 alert('Ошибка добавления приза');
             }
         }
 
         async function deletePrize(prizeId) {
-            if (!confirm('Удалить этот приз?')) return;
+            if (!confirm('Удалить этот приз из рулетки?')) return;
             try {
                 const res = await fetch('/api/admin/delete-prize', {
                     method: 'POST',
@@ -1736,19 +1747,17 @@
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
-                isPrizesLoadedOnce = false;
                 loadAdminPrizes();
             } catch (e) {
-                alert('Ошибка удаления приза');
+                console.error(e);
+                alert('Ошибка удаления');
             }
         }
 
         async function updateWeight(prizeId) {
             const input = document.getElementById(`weight-${prizeId}`);
             if (!input) return;
-            const weight = Number(input.value);
-            if (isNaN(weight)) return;
-
+            const weight = Number(input.value) || 1;
             try {
                 await fetch('/api/admin/update-prize', {
                     method: 'POST',
@@ -1756,13 +1765,72 @@
                     body: JSON.stringify({ prizeId: Number(prizeId), weight })
                 });
             } catch (e) {
-                console.error('Weight update error:', e);
+                console.error('Update weight error:', e);
+            }
+        }
+
+        async function setBanStatus(banState) {
+            const targetIdentifier = document.getElementById('ban-username').value.trim();
+            if (!targetIdentifier) {
+                alert('Введите юзернейм или ID');
+                return;
+            }
+            await actionUserBan(targetIdentifier, banState);
+            document.getElementById('ban-username').value = '';
+            loadBannedUsers();
+        }
+
+        async function resetTimer() {
+            const targetIdentifier = document.getElementById('ban-username').value.trim();
+            if (!targetIdentifier) {
+                alert('Введите юзернейм или ID');
+                return;
+            }
+            await actionResetTimer(targetIdentifier);
+            document.getElementById('ban-username').value = '';
+        }
+
+        async function loadAdminsList() {
+            const container = document.getElementById('admins-list-container');
+            const superSec = document.getElementById('super-admin-section');
+            if (isSuperAdmin) {
+                superSec.style.display = 'block';
+            }
+            try {
+                const res = await fetch('/api/admin/list', { headers: getAuthHeaders() });
+                const data = await res.json();
+                if (!data.admins) return;
+                container.innerHTML = '';
+                data.admins.forEach(adm => {
+                    const isSuper = adm.is_super === 1;
+                    const card = document.createElement('div');
+                    card.className = 'admin-card';
+                    
+                    let removeBtnHtml = '';
+                    if (isSuper) {
+                        removeBtnHtml = '<span style="font-size:10px; color:var(--primary); font-weight:700;">Супер-админ</span>';
+                    } else if (isSuperAdmin) {
+                        removeBtnHtml = `<button type="button" onclick="removeAdmin('${adm.id}')">Удалить</button>`;
+                    }
+
+                    const displayName = formatUserDisplay(adm.username, adm.id);
+                    card.innerHTML = `
+                        <div style="font-weight:700;">${displayName}</div>
+                        ${removeBtnHtml}
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (e) {
+                console.error(e);
             }
         }
 
         async function addNewAdmin() {
             const targetIdentifier = document.getElementById('new-admin-username').value.trim();
-            if (!targetIdentifier) return;
+            if (!targetIdentifier) {
+                alert('Введите юзернейм или ID пользователя');
+                return;
+            }
             try {
                 const res = await fetch('/api/admin/add-admin', {
                     method: 'POST',
@@ -1774,11 +1842,13 @@
                 document.getElementById('new-admin-username').value = '';
                 alert('Администратор добавлен');
                 loadAdminsList();
-            } catch (e) { alert('Ошибка сети'); }
+            } catch (e) {
+                alert('Ошибка сети');
+            }
         }
 
         async function removeAdmin(targetIdentifier) {
-            if (!confirm('Снять права администратора?')) return;
+            if (!confirm('Удалить права администратора?')) return;
             try {
                 const res = await fetch('/api/admin/remove-admin', {
                     method: 'POST',
@@ -1789,31 +1859,17 @@
                 if (data.error) { alert(data.error); return; }
                 alert('Администратор удален');
                 loadAdminsList();
-            } catch (e) { alert('Ошибка сети'); }
+            } catch (e) {
+                alert('Ошибка сети');
+            }
         }
 
-        async function setBanStatus(state) {
-            const targetIdentifier = document.getElementById('ban-username').value.trim();
-            if (!targetIdentifier) return;
-            await actionUserBan(targetIdentifier, state);
-            document.getElementById('ban-username').value = '';
-            loadBannedUsers();
-        }
-
-        async function resetTimer() {
-            const targetIdentifier = document.getElementById('ban-username').value.trim();
-            if (!targetIdentifier) return;
-            await actionResetTimer(targetIdentifier);
-            document.getElementById('ban-username').value = '';
-        }
-
-        // Анимация рулетки и открытие кейса
         async function startCase() {
+            if (isSpinning) return;
+            isSpinning = true;
+
             const btn = document.getElementById('action-button');
             const msg = document.getElementById('result-message');
-            if (isSpinning) return;
-
-            isSpinning = true;
             btn.disabled = true;
             msg.innerText = '';
 
@@ -1825,13 +1881,15 @@
                 const data = await res.json();
 
                 if (data.error) {
-                    alert(data.error);
                     isSpinning = false;
+                    btn.disabled = false;
+                    alert(data.error);
                     checkUserStatus();
                     return;
                 }
 
                 if (data.isBanned) {
+                    isSpinning = false;
                     document.getElementById('banned-screen').style.display = 'flex';
                     return;
                 }
@@ -1841,62 +1899,63 @@
 
                 const prizesRes = await fetch('/api/admin/prizes', { headers: getAuthHeaders() });
                 const prizesData = await prizesRes.json();
-                const allPrizes = prizesData.prizes || [];
+                const allPrizes = prizesData.prizes || cachedServerPrizes;
 
-                if (allPrizes.length === 0) {
-                    alert('Призы не настроены');
+                if (!allPrizes || allPrizes.length === 0) {
                     isSpinning = false;
-                    checkUserStatus();
+                    btn.disabled = false;
+                    alert('Призы не настроены в рулетке');
                     return;
                 }
 
                 document.getElementById('case-preview-container').style.display = 'none';
-                document.getElementById('roller-wrapper-box').style.display = 'flex';
+                const rollerWrapper = document.getElementById('roller-wrapper-box');
+                rollerWrapper.style.display = 'flex';
 
                 const rollerContent = document.getElementById('roller-content');
                 rollerContent.innerHTML = '';
 
-                let itemsHTML = '';
                 const totalItemsCount = 60;
-                const targetIndex = 48;
+                const winningIndex = 48;
+                const builtItems = [];
 
-                let builtPrizesList = [];
                 for (let i = 0; i < totalItemsCount; i++) {
-                    let prize;
-                    if (i === targetIndex) {
-                        prize = allPrizes.find(p => p.name === wonPrize.name) || wonPrize;
+                    let p;
+                    if (i === winningIndex) {
+                        p = allPrizes.find(item => item.name === wonPrize.name) || wonPrize;
                     } else {
-                        prize = allPrizes[Math.floor(Math.random() * allPrizes.length)];
+                        p = allPrizes[Math.floor(Math.random() * allPrizes.length)];
                     }
-                    builtPrizesList.push(prize);
-
-                    let rarityClass = 'prize-common';
-                    if (prize.rarity === 'rare') rarityClass = 'prize-rare';
-                    if (prize.rarity === 'epic') rarityClass = 'prize-epic';
-                    if (prize.rarity === 'legendary') rarityClass = 'prize-legendary';
-
-                    itemsHTML += `
-                        <div class="prize-item ${rarityClass}">
-                            <div class="prize-icon-wrap">${getIconHtml(prize.icon, '38px')}</div>
-                            <div class="prize-name">${prize.name}</div>
-                            <div class="prize-desc">${prize.rarity || 'common'}</div>
-                        </div>
-                    `;
+                    builtItems.push(p);
                 }
 
-                rollerContent.innerHTML = itemsHTML;
+                builtItems.forEach(p => {
+                    const itemDiv = document.createElement('div');
+                    let rarityClass = '';
+                    if (p.rarity === 'rare') rarityClass = 'prize-rare';
+                    else if (p.rarity === 'epic') rarityClass = 'prize-epic';
+                    else if (p.rarity === 'legendary') rarityClass = 'prize-legendary';
 
-                const itemWidth = 144; // 136px width + 8px margins
-                const windowWidth = document.getElementById('roller-window').clientWidth;
-                const randomOffset = (Math.random() * 100) - 50; 
-                const targetLeft = (targetIndex * itemWidth) - (windowWidth / 2) + (itemWidth / 2) + randomOffset;
+                    itemDiv.className = `prize-item ${rarityClass}`;
+                    itemDiv.innerHTML = `
+                        <div class="prize-icon-wrap">${getIconHtml(p.icon, '38px')}</div>
+                        <div class="prize-name">${p.name}</div>
+                        <div class="prize-desc">${p.rarity || 'common'}</div>
+                    `;
+                    rollerContent.appendChild(itemDiv);
+                });
 
                 rollerContent.style.transition = 'none';
                 rollerContent.style.left = '0px';
                 void rollerContent.offsetWidth;
 
-                rollerContent.style.transition = 'left 4.5s cubic-bezier(0.08, 0.82, 0.12, 1)';
-                rollerContent.style.left = `-${targetLeft}px`;
+                const itemWidth = 144; 
+                const windowWidth = document.getElementById('roller-window').clientWidth;
+                const randomOffset = (Math.random() * 100) - 50; 
+                const targetLeft = -((winningIndex * itemWidth) - (windowWidth / 2) + (itemWidth / 2) + randomOffset);
+
+                rollerContent.style.transition = 'left 5.5s cubic-bezier(0.08, 0.82, 0.12, 1)';
+                rollerContent.style.left = `${targetLeft}px`;
 
                 setTimeout(() => {
                     isSpinning = false;
@@ -1904,14 +1963,14 @@
                     document.getElementById('win-modal-title').innerText = wonPrize.name;
                     document.getElementById('win-modal-promo').innerText = wonPromo;
                     document.getElementById('win-modal').style.display = 'flex';
-                }, 4700);
+                }, 5600);
 
-            } catch (err) {
-                console.error(err);
-                alert('Произошла ошибка при открытии кейса');
+            } catch (e) {
+                console.error(e);
                 isSpinning = false;
+                btn.disabled = false;
+                alert('Произошла ошибка при открытии кейса');
                 checkUserStatus();
-                resetCasePreviewState();
             }
         }
     </script>
