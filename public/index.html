@@ -279,6 +279,7 @@
             font-weight: 600;
         }
 
+        /* Убрана яркая оранжевая рамка на рулетке, заменена на более тонкую нейтральную/интерфейсную линию */
         .selector-center-box {
             position: absolute;
             top: 50%;
@@ -286,12 +287,12 @@
             transform: translate(-50%, -50%);
             width: 144px;
             height: 160px;
-            border: 1px solid var(--primary);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 16px;
             z-index: 10;
             pointer-events: none;
-            box-shadow: 0 0 20px var(--primary-glow), inset 0 0 10px rgba(212, 163, 115, 0.05);
-            background: linear-gradient(180deg, rgba(212, 163, 115, 0.03) 0%, transparent 100%);
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.01);
         }
 
         .selector-center-box::before, .selector-center-box::after {
@@ -301,17 +302,17 @@
             transform: translateX(-50%);
             width: 0; 
             height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
         }
         .selector-center-box::before { 
-            top: 3px; 
-            border-top: 6px solid var(--primary); 
+            top: 2px; 
+            border-top: 5px solid var(--text-muted); 
             border-bottom: none;
         }
         .selector-center-box::after { 
-            bottom: 3px; 
-            border-bottom: 6px solid var(--primary); 
+            bottom: 2px; 
+            border-bottom: 5px solid var(--text-muted); 
             border-top: none;
         }
 
@@ -649,13 +650,14 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
         }
 
+        /* Фикс отображения модального окна победы и перекрытия элементов интерфейса */
         #win-modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(3, 4, 6, 0.88);
             backdrop-filter: blur(16px);
-            z-index: 9999;
+            z-index: 999999;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -1649,9 +1651,8 @@
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
-                alert(banState === 1 ? 'Пользователь заблокирован' : 'Пользователь разблокирован');
                 loadAllUsers();
-            } catch (e) { alert('Ошибка сети'); }
+            } catch (e) { console.error(e); }
         }
 
         async function actionResetTimer(targetIdentifier) {
@@ -1663,12 +1664,11 @@
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
-                alert('Таймер открытия кейса сброшен');
-            } catch (e) { alert('Ошибка сети'); }
+                alert('Таймер сброшен');
+            } catch (e) { console.error(e); }
         }
 
         async function actionMakeAdmin(targetIdentifier) {
-            if (!isSuperAdmin) return alert('Только главный администратор может назначать других админов');
             try {
                 const res = await fetch('/api/admin/add-admin', {
                     method: 'POST',
@@ -1677,12 +1677,12 @@
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
-                alert('Пользователь успешно назначен администратором');
-            } catch (e) { alert('Ошибка сети'); }
+                alert('Пользователь назначен администратором!');
+            } catch (e) { console.error(e); }
         }
 
         async function deleteUser(targetIdentifier) {
-            if (!confirm('Удалить пользователя и все его данные?')) return;
+            if (!confirm('Удалить игрока и все его данные?')) return;
             try {
                 const res = await fetch('/api/admin/delete-user', {
                     method: 'POST',
@@ -1691,14 +1691,80 @@
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
-                alert('Пользователь удален');
                 loadAllUsers();
-            } catch (e) { alert('Ошибка сети'); }
+            } catch (e) { console.error(e); }
         }
 
         async function quickUnban(targetIdentifier) {
             await actionUserBan(targetIdentifier, 0);
             loadBannedUsers();
+        }
+
+        async function loadAdminsList() {
+            const listEl = document.getElementById('admins-list-container');
+            const superSec = document.getElementById('super-admin-section');
+            if (isSuperAdmin) {
+                superSec.style.display = 'block';
+            }
+            try {
+                const res = await fetch('/api/admin/list', { headers: getAuthHeaders() });
+                const data = await res.json();
+                if (!data.admins) return;
+                listEl.innerHTML = '';
+                data.admins.forEach(adm => {
+                    const isRopogku = adm.username && adm.username.toLowerCase() === 'ropogku';
+                    const displayName = formatUserDisplay(adm.username, adm.id);
+                    const card = document.createElement('div');
+                    card.className = 'admin-card';
+                    
+                    let actionHtml = '';
+                    if (isSuperAdmin && !isRopogku) {
+                        actionHtml = `<button type="button" onclick="removeAdmin('${adm.id}')">Удалить</button>`;
+                    } else if (isRopogku) {
+                        actionHtml = `<span style="font-size:10px; color:var(--primary); font-weight:700;">Супер-админ</span>`;
+                    }
+
+                    card.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span>👑</span>
+                            <span style="font-weight:700;">${displayName}</span>
+                        </div>
+                        ${actionHtml}
+                    `;
+                    listEl.appendChild(card);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function addNewAdmin() {
+            const targetIdentifier = document.getElementById('new-admin-username').value.trim();
+            if (!targetIdentifier) { alert('Введите юзернейм или ID'); return; }
+            try {
+                const res = await fetch('/api/admin/add-admin', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                document.getElementById('new-admin-username').value = '';
+                loadAdminsList();
+                alert('Администратор успешно добавлен!');
+            } catch (e) { console.error(e); }
+        }
+
+        async function removeAdmin(targetIdentifier) {
+            if (!confirm('Забрать права администратора?')) return;
+            try {
+                const res = await fetch('/api/admin/remove-admin', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                loadAdminsList();
+            } catch (e) { console.error(e); }
         }
 
         async function addPrize() {
@@ -1708,10 +1774,7 @@
             const weight = Number(document.getElementById('new-weight').value) || 1;
             const promo_prefix = document.getElementById('new-promo').value.trim() || 'CYBER';
 
-            if (!name) {
-                alert('Введите название приза');
-                return;
-            }
+            if (!name) { alert('Введите название приза'); return; }
 
             try {
                 const res = await fetch('/api/admin/add-prize', {
@@ -1727,14 +1790,13 @@
                 document.getElementById('new-rarity').value = '';
                 document.getElementById('new-weight').value = '';
                 document.getElementById('new-promo').value = '';
+                document.getElementById('prize-file-input').value = '';
 
-                alert('Приз успешно добавлен!');
                 switchAdminSub('prizes');
+                isPrizesLoadedOnce = false;
                 loadAdminPrizes();
-            } catch (e) {
-                console.error(e);
-                alert('Ошибка добавления приза');
-            }
+                alert('Приз успешно добавлен!');
+            } catch (e) { console.error(e); }
         }
 
         async function deletePrize(prizeId) {
@@ -1743,125 +1805,59 @@
                 const res = await fetch('/api/admin/delete-prize', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ prizeId: Number(prizeId) })
+                    body: JSON.stringify({ prizeId })
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
+                isPrizesLoadedOnce = false;
                 loadAdminPrizes();
-            } catch (e) {
-                console.error(e);
-                alert('Ошибка удаления');
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function updateWeight(prizeId) {
-            const input = document.getElementById(`weight-${prizeId}`);
-            if (!input) return;
-            const weight = Number(input.value) || 1;
+            const weightInput = document.getElementById(`weight-${prizeId}`);
+            if (!weightInput) return;
+            const weight = Number(weightInput.value);
             try {
                 await fetch('/api/admin/update-prize', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ prizeId: Number(prizeId), weight })
+                    body: JSON.stringify({ prizeId, weight })
                 });
-            } catch (e) {
-                console.error('Update weight error:', e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function setBanStatus(banState) {
             const targetIdentifier = document.getElementById('ban-username').value.trim();
-            if (!targetIdentifier) {
-                alert('Введите юзернейм или ID');
-                return;
-            }
-            await actionUserBan(targetIdentifier, banState);
-            document.getElementById('ban-username').value = '';
-            loadBannedUsers();
+            if (!targetIdentifier) { alert('Введите юзернейм или ID'); return; }
+            try {
+                const res = await fetch('/api/admin/ban', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier, banState })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                alert(banState === 1 ? 'Пользователь заблокирован' : 'Пользователь разблокирован');
+                document.getElementById('ban-username').value = '';
+                loadBannedUsers();
+            } catch (e) { console.error(e); }
         }
 
         async function resetTimer() {
             const targetIdentifier = document.getElementById('ban-username').value.trim();
-            if (!targetIdentifier) {
-                alert('Введите юзернейм или ID');
-                return;
-            }
-            await actionResetTimer(targetIdentifier);
-            document.getElementById('ban-username').value = '';
-        }
-
-        async function loadAdminsList() {
-            const container = document.getElementById('admins-list-container');
-            const superSec = document.getElementById('super-admin-section');
-            if (isSuperAdmin) {
-                superSec.style.display = 'block';
-            }
+            if (!targetIdentifier) { alert('Введите юзернейм или ID'); return; }
             try {
-                const res = await fetch('/api/admin/list', { headers: getAuthHeaders() });
-                const data = await res.json();
-                if (!data.admins) return;
-                container.innerHTML = '';
-                data.admins.forEach(adm => {
-                    const isSuper = adm.is_super === 1;
-                    const card = document.createElement('div');
-                    card.className = 'admin-card';
-                    
-                    let removeBtnHtml = '';
-                    if (isSuper) {
-                        removeBtnHtml = '<span style="font-size:10px; color:var(--primary); font-weight:700;">Супер-админ</span>';
-                    } else if (isSuperAdmin) {
-                        removeBtnHtml = `<button type="button" onclick="removeAdmin('${adm.id}')">Удалить</button>`;
-                    }
-
-                    const displayName = formatUserDisplay(adm.username, adm.id);
-                    card.innerHTML = `
-                        <div style="font-weight:700;">${displayName}</div>
-                        ${removeBtnHtml}
-                    `;
-                    container.appendChild(card);
-                });
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function addNewAdmin() {
-            const targetIdentifier = document.getElementById('new-admin-username').value.trim();
-            if (!targetIdentifier) {
-                alert('Введите юзернейм или ID пользователя');
-                return;
-            }
-            try {
-                const res = await fetch('/api/admin/add-admin', {
+                const res = await fetch('/api/admin/reset-timer', {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({ targetIdentifier })
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
-                document.getElementById('new-admin-username').value = '';
-                alert('Администратор добавлен');
-                loadAdminsList();
-            } catch (e) {
-                alert('Ошибка сети');
-            }
-        }
-
-        async function removeAdmin(targetIdentifier) {
-            if (!confirm('Удалить права администратора?')) return;
-            try {
-                const res = await fetch('/api/admin/remove-admin', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                alert('Администратор удален');
-                loadAdminsList();
-            } catch (e) {
-                alert('Ошибка сети');
-            }
+                alert('Таймер кулдауна успешно сброшен!');
+                document.getElementById('ban-username').value = '';
+            } catch (e) { console.error(e); }
         }
 
         async function startCase() {
@@ -1870,10 +1866,25 @@
 
             const btn = document.getElementById('action-button');
             const msg = document.getElementById('result-message');
+            const rollerWrapper = document.getElementById('roller-wrapper-box');
+            const casePreview = document.getElementById('case-preview-container');
+            const rollerContent = document.getElementById('roller-content');
+
             btn.disabled = true;
             msg.innerText = '';
 
             try {
+                const resPrizes = await fetch('/api/admin/prizes', { headers: getAuthHeaders() });
+                const dataPrizes = await resPrizes.json();
+                const prizes = dataPrizes.prizes;
+
+                if (!prizes || prizes.length === 0) {
+                    alert('Призы не настроены!');
+                    isSpinning = false;
+                    btn.disabled = false;
+                    return;
+                }
+
                 const res = await fetch('/api/spin', {
                     method: 'POST',
                     headers: getAuthHeaders()
@@ -1881,96 +1892,74 @@
                 const data = await res.json();
 
                 if (data.error) {
-                    isSpinning = false;
-                    btn.disabled = false;
                     alert(data.error);
+                    isSpinning = false;
                     checkUserStatus();
                     return;
                 }
 
-                if (data.isBanned) {
-                    isSpinning = false;
-                    document.getElementById('banned-screen').style.display = 'flex';
-                    return;
-                }
-
-                const wonPrize = data.prize;
-                const wonPromo = data.promo;
-
-                const prizesRes = await fetch('/api/admin/prizes', { headers: getAuthHeaders() });
-                const prizesData = await prizesRes.json();
-                const allPrizes = prizesData.prizes || cachedServerPrizes;
-
-                if (!allPrizes || allPrizes.length === 0) {
-                    isSpinning = false;
-                    btn.disabled = false;
-                    alert('Призы не настроены в рулетке');
-                    return;
-                }
-
-                document.getElementById('case-preview-container').style.display = 'none';
-                const rollerWrapper = document.getElementById('roller-wrapper-box');
+                casePreview.style.display = 'none';
                 rollerWrapper.style.display = 'flex';
 
-                const rollerContent = document.getElementById('roller-content');
-                rollerContent.innerHTML = '';
+                let listHtml = '';
+                const totalItemsCount = 50;
+                let winningIndex = 38; 
 
-                const totalItemsCount = 60;
-                const winningIndex = 48;
-                const builtItems = [];
-
+                let generatedItems = [];
                 for (let i = 0; i < totalItemsCount; i++) {
                     let p;
                     if (i === winningIndex) {
-                        p = allPrizes.find(item => item.name === wonPrize.name) || wonPrize;
+                        p = prizes.find(item => item.name === data.prize.name) || prizes[0];
                     } else {
-                        p = allPrizes[Math.floor(Math.random() * allPrizes.length)];
+                        p = prizes[Math.floor(Math.random() * prizes.length)];
                     }
-                    builtItems.push(p);
+                    generatedItems.push(p);
                 }
 
-                builtItems.forEach(p => {
-                    const itemDiv = document.createElement('div');
+                generatedItems.forEach((p) => {
                     let rarityClass = '';
                     if (p.rarity === 'rare') rarityClass = 'prize-rare';
-                    else if (p.rarity === 'epic') rarityClass = 'prize-epic';
-                    else if (p.rarity === 'legendary') rarityClass = 'prize-legendary';
+                    if (p.rarity === 'epic') rarityClass = 'prize-epic';
+                    if (p.rarity === 'legendary') rarityClass = 'prize-legendary';
 
-                    itemDiv.className = `prize-item ${rarityClass}`;
-                    itemDiv.innerHTML = `
-                        <div class="prize-icon-wrap">${getIconHtml(p.icon, '38px')}</div>
-                        <div class="prize-name">${p.name}</div>
-                        <div class="prize-desc">${p.rarity || 'common'}</div>
+                    listHtml += `
+                        <div class="prize-item ${rarityClass}">
+                            <div class="prize-icon-wrap">${getIconHtml(p.icon, '38px')}</div>
+                            <div class="prize-name">${p.name}</div>
+                            <div class="prize-desc">${p.rarity || 'common'}</div>
+                        </div>
                     `;
-                    rollerContent.appendChild(itemDiv);
                 });
 
+                rollerContent.innerHTML = listHtml;
                 rollerContent.style.transition = 'none';
                 rollerContent.style.left = '0px';
+
                 void rollerContent.offsetWidth;
 
-                const itemWidth = 144; 
+                const itemWidth = 144; // 136px width + 8px margins total
                 const windowWidth = document.getElementById('roller-window').clientWidth;
-                const randomOffset = (Math.random() * 100) - 50; 
-                const targetLeft = -((winningIndex * itemWidth) - (windowWidth / 2) + (itemWidth / 2) + randomOffset);
+                
+                let targetOffset = (winningIndex * itemWidth) - (windowWidth / 2) + (itemWidth / 2);
+                let randomOffset = (Math.random() * 80) - 40; 
+                let finalPosition = -(targetOffset + randomOffset);
 
-                rollerContent.style.transition = 'left 5.5s cubic-bezier(0.08, 0.82, 0.12, 1)';
-                rollerContent.style.left = `${targetLeft}px`;
+                rollerContent.style.transition = 'left 4.5s cubic-bezier(0.08, 0.82, 0.12, 1)';
+                rollerContent.style.left = `${finalPosition}px`;
 
                 setTimeout(() => {
                     isSpinning = false;
-                    document.getElementById('win-modal-icon').innerHTML = getIconHtml(wonPrize.icon, '52px');
-                    document.getElementById('win-modal-title').innerText = wonPrize.name;
-                    document.getElementById('win-modal-promo').innerText = wonPromo;
+                    document.getElementById('win-modal-icon').innerHTML = getIconHtml(data.prize.icon, '52px');
+                    document.getElementById('win-modal-title').innerText = data.prize.name;
+                    document.getElementById('win-modal-promo').innerText = data.promo;
                     document.getElementById('win-modal').style.display = 'flex';
-                }, 5600);
+                }, 4700);
 
             } catch (e) {
                 console.error(e);
                 isSpinning = false;
-                btn.disabled = false;
-                alert('Произошла ошибка при открытии кейса');
                 checkUserStatus();
+                alert('Произошла ошибка при открытии кейса');
             }
         }
     </script>
