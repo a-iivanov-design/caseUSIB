@@ -258,6 +258,7 @@ app.get('/api/status', authMiddleware, async (req, res) => {
     });
 
     let user = userRes.rows[0];
+    const adminCheck = await verifyAdminByTelegramUser(req.telegramUser);
 
     if (!user) {
       await db.execute({
@@ -267,9 +268,13 @@ app.get('/api/status', authMiddleware, async (req, res) => {
       return res.json({ isBanned: false, canSpin: true });
     }
 
-    const adminCheck = await verifyAdminByTelegramUser(req.telegramUser);
     if (user.is_banned === 1 && !adminCheck.isAdmin) {
       return res.json({ isBanned: true });
+    }
+
+    // Если пользователь администратор — перезарядки нет вовсе
+    if (adminCheck.isAdmin) {
+      return res.json({ isBanned: false, canSpin: true });
     }
 
     let canSpin = true;
@@ -330,7 +335,8 @@ app.post('/api/spin', authMiddleware, async (req, res) => {
       return res.status(403).json({ isBanned: true, error: 'Аккаунт заблокирован' });
     }
 
-    if (user && user.last_spin) {
+    // Проверка кулдауна только для обычных пользователей (админы могут крутить без ограничения)
+    if (!adminCheck.isAdmin && user && user.last_spin) {
       const lastSpinTime = new Date(user.last_spin).getTime();
       const now = Date.now();
       const cooldownTime = 24 * 60 * 60 * 1000;
