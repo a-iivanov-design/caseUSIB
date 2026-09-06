@@ -242,7 +242,12 @@
 
         .prize-item.prize-rare { background: linear-gradient(145deg, #0f1626 0%, #0a0e17 100%); border-color: rgba(59, 130, 246, 0.2); }
         .prize-item.prize-epic { background: linear-gradient(145deg, #191024 0%, #0f0a17 100%); border-color: rgba(168, 85, 247, 0.2); }
-        .prize-item.prize-legendary { background: linear-gradient(145deg, #241a0d 0%, #140f07 100%); border-color: rgba(212, 163, 115, 0.35); }
+        .prize-item.prize-legendary { background: linear-gradient(145deg, #241a0d 0%, #140f07 100%); border-color: rgba(255, 215, 0, 0.6); box-shadow: 0 0 15px rgba(255, 215, 0, 0.25); animation: legendaryGlow 2s infinite alternate; }
+
+        @keyframes legendaryGlow {
+            0% { border-color: rgba(255, 215, 0, 0.4); box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); }
+            100% { border-color: rgba(255, 215, 0, 0.9); box-shadow: 0 0 25px rgba(255, 215, 0, 0.5); }
+        }
 
         .prize-icon-wrap {
             font-size: 32px;
@@ -670,10 +675,22 @@
             text-align: center;
             box-shadow: 0 24px 60px rgba(0,0,0,0.8), 0 0 30px var(--primary-glow);
             animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.3s ease;
         }
         @keyframes modalPop {
             0% { transform: scale(0.9); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Эффект эпичного / легендарного выпадения */
+        .win-modal-card.legendary-win {
+            border-color: #FFD700 !important;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.9), 0 0 50px rgba(255, 215, 0, 0.5) !important;
+            animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1), legendaryCardPulse 2s infinite alternate;
+        }
+        @keyframes legendaryCardPulse {
+            0% { box-shadow: 0 24px 60px rgba(0,0,0,0.9), 0 0 30px rgba(255, 215, 0, 0.4); }
+            100% { box-shadow: 0 24px 60px rgba(0,0,0,0.9), 0 0 60px rgba(255, 215, 0, 0.7); }
         }
     </style>
 </head>
@@ -688,8 +705,8 @@
     </div>
 
     <div id="win-modal">
-        <div class="win-modal-card">
-            <div style="font-size: 10px; text-transform: uppercase; color: var(--primary); margin-bottom: 6px; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px var(--primary-glow);">Поздравляем с победой!</div>
+        <div class="win-modal-card" id="win-modal-card-element">
+            <div id="win-modal-rarity-label" style="font-size: 10px; text-transform: uppercase; color: var(--primary); margin-bottom: 6px; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px var(--primary-glow);">Поздравляем с победой!</div>
             <div id="win-modal-icon" style="font-size: 52px; margin: 12px 0;">🎁</div>
             <h3 id="win-modal-title" style="font-size: 17px; font-weight: 800; color: var(--text-main); margin: 0 0 14px 0;">Название приза</h3>
             <div style="background: rgba(10, 11, 14, 0.7); border: 1px solid var(--border-color); padding: 12px; border-radius: 14px; margin-bottom: 18px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);">
@@ -886,7 +903,6 @@
             });
         }
 
-        // Мгновенная предварительная установка дизайна из кэша sessionStorage (убирает мерцание/подгрузку)
         (function applyCachedSettings() {
             try {
                 const cached = sessionStorage.getItem('app_settings_cache');
@@ -920,7 +936,6 @@
                 const res = await fetch('/api/settings');
                 const settings = await res.json();
                 
-                // Сохраняем в сессию, чтобы при перезаходе дизайн применялся мгновенно без моргания
                 try {
                     sessionStorage.setItem('app_settings_cache', JSON.stringify(settings));
                 } catch(e) {}
@@ -1150,7 +1165,7 @@
 
             if (sub === 'stats') {
                 loadStats();
-                statsInterval = setInterval(loadStats, 2000); // Автообновление статистики в реальном времени каждые 2 секунды
+                statsInterval = setInterval(loadStats, 2000);
             }
             if (sub === 'ban') loadBannedUsers();
             if (sub === 'users') loadAllUsers();
@@ -1461,13 +1476,28 @@
             document.getElementById('win-modal-icon').innerHTML = getIconHtml(prize.icon, '52px');
             document.getElementById('win-modal-title').innerText = prize.name;
             document.getElementById('win-modal-promo').innerText = promo;
+
+            const modalCard = document.getElementById('win-modal-card-element');
+            const rarityLabel = document.getElementById('win-modal-rarity-label');
+
+            // Проверяем, если предмет выше эпика (например, legendary)
+            if (prize.rarity === 'legendary') {
+                modalCard.classList.add('legendary-win');
+                rarityLabel.innerText = '🔥 Легендарный выигрыш!';
+                rarityLabel.style.color = '#FFD700';
+            } else {
+                modalCard.classList.remove('legendary-win');
+                rarityLabel.innerText = 'Поздравляем с победой!';
+                rarityLabel.style.color = 'var(--primary)';
+            }
+
             document.getElementById('win-modal').style.display = 'flex';
         }
 
         function closeWinModal() {
             document.getElementById('win-modal').style.display = 'none';
             resetCasePreviewState();
-            switchTab('inventory');
+            // Больше не перекидывает в инвентарь автоматически, пользователь остается на странице кейса
         }
 
         async function loadInventory() {
@@ -1759,84 +1789,76 @@
 
         async function loadAllUsers() {
             const listEl = document.getElementById('all-users-list');
-            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка списка игроков...</div>';
-
+            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка игроков...</div>';
             try {
                 const res = await fetch('/api/admin/users-list', { headers: getAuthHeaders() });
                 const data = await res.json();
                 const users = data.users || [];
 
                 if (users.length === 0) {
-                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Нет зарегистрированных игроков</div>';
+                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Нет игроков</div>';
                     return;
                 }
 
                 listEl.innerHTML = '';
                 users.forEach(u => {
-                    const isBanned = u.is_banned === 1;
                     const card = document.createElement('div');
                     card.className = 'admin-card';
+                    card.style.position = 'relative';
                     card.innerHTML = `
-                        <div>
-                            <div style="font-weight:800; color:var(--text-main);">${formatUserDisplay(u.username, u.id)}</div>
-                            <div style="font-size:10px; color:${isBanned ? 'var(--secondary)' : 'var(--text-muted)'};">${isBanned ? 'Заблокирован' : 'Активен'}</div>
+                        <div style="font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+                            ${formatUserDisplay(u.username, u.id)}
+                            ${u.is_banned === 1 ? '<span style="font-size:10px; color:var(--secondary); background:rgba(224,83,83,0.1); padding:2px 6px; border-radius:6px;">Забан</span>' : ''}
                         </div>
                         <div class="user-menu-wrap" style="position:relative;">
-                            <button style="background:var(--card-bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="toggleUserMenu(event, '${u.id}')">⚙️ Действия</button>
+                            <button class="admin-dots-btn" onclick="toggleUserMenu(event, '${u.id}')">⋮</button>
                             <div class="user-dropdown-menu" id="user-menu-${u.id}">
-                                <button class="admin-dropdown-item" onclick="userActionBan('${u.id}', ${isBanned ? 0 : 1})">${isBanned ? '🟢 Разблокировать' : '🔴 Заблокировать'}</button>
-                                <button class="admin-dropdown-item" onclick="userActionReset('${u.id}')">⏱️ Сбросить таймер</button>
-                                <button class="admin-dropdown-item" style="color:var(--secondary);" onclick="userActionDelete('${u.id}')">🗑️ Удалить игрока</button>
+                                <button class="admin-dropdown-item" onclick="adminActionUser('${u.id}', 'ban', ${u.is_banned === 1 ? 0 : 1})">${u.is_banned === 1 ? '🛡️ Разбанить' : '🛡️ Заблокировать'}</button>
+                                <button class="admin-dropdown-item" onclick="adminActionUser('${u.id}', 'timer', 0)">⏳ Сбросить таймер</button>
+                                <button class="admin-dropdown-item" onclick="adminActionUser('${u.id}', 'delete', 0)" style="color:var(--secondary);">🗑️ Удалить игрока</button>
                             </div>
                         </div>
                     `;
                     listEl.appendChild(card);
                 });
             } catch (e) {
-                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки игроков</div>';
+                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки</div>';
             }
         }
 
-        async function userActionBan(userId, state) {
+        async function adminActionUser(targetId, actionType, value) {
             try {
-                await fetch('/api/admin/ban', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier: userId, banState: state })
-                });
-                loadAllUsers();
-            } catch (e) { alert('Ошибка'); }
-        }
-
-        async function userActionReset(userId) {
-            try {
-                await fetch('/api/admin/reset-timer', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier: userId })
-                });
-                alert('Таймер сброшен!');
-                loadAllUsers();
-            } catch (e) { alert('Ошибка'); }
-        }
-
-        async function userActionDelete(userId) {
-            if (!confirm('Удалить этого игрока и его инвентарь?')) return;
-            try {
-                const res = await fetch('/api/admin/delete-user', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier: userId })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                loadAllUsers();
-            } catch (e) { alert('Ошибка удаления'); }
+                if (actionType === 'ban') {
+                    await fetch('/api/admin/ban', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ targetIdentifier: targetId, banState: value })
+                    });
+                    loadAllUsers();
+                } else if (actionType === 'timer') {
+                    await fetch('/api/admin/reset-timer', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ targetIdentifier: targetId })
+                    });
+                    alert('Таймер сброшен!');
+                } else if (actionType === 'delete') {
+                    if (!confirm('Удалить этого игрока и его инвентарь?')) return;
+                    await fetch('/api/admin/delete-user', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ targetIdentifier: targetId })
+                    });
+                    loadAllUsers();
+                }
+            } catch (e) {
+                alert('Ошибка выполнения действия');
+            }
         }
 
         async function loadAdminsList() {
             const listEl = document.getElementById('admins-list-container');
-            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка...</div>';
+            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка админов...</div>';
             try {
                 const res = await fetch('/api/admin/list', { headers: getAuthHeaders() });
                 const data = await res.json();
@@ -1844,15 +1866,14 @@
 
                 listEl.innerHTML = '';
                 admins.forEach(a => {
-                    const isSuper = a.is_super === 1;
                     const card = document.createElement('div');
                     card.className = 'admin-card';
                     card.innerHTML = `
                         <div>
-                            <div style="font-weight:800; color:var(--text-main);">${formatUserDisplay(a.username, a.id)}</div>
-                            <div style="font-size:10px; color:${isSuper ? 'var(--primary)' : 'var(--text-muted)'};">${isSuper ? 'Главный администратор' : 'Администратор'}</div>
+                            <div style="font-weight:700; color:var(--text-main);">${formatUserDisplay(a.username, a.id)}</div>
+                            <div style="font-size:10px; color:var(--primary); margin-top:2px;">${a.is_super === 1 ? 'Главный администратор' : 'Администратор'}</div>
                         </div>
-                        ${(isSuper || !isSuperAdmin) ? '' : `<button onclick="removeAdmin('${a.id}')">Удалить</button>`}
+                        ${(isSuperAdmin && a.is_super !== 1) ? `<button onclick="removeAdmin('${a.id}')">Снять</button>` : ''}
                     `;
                     listEl.appendChild(card);
                 });
@@ -1876,16 +1897,16 @@
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
-                document.getElementById('new-admin-username').value = '';
                 alert('Администратор успешно назначен!');
+                document.getElementById('new-admin-username').value = '';
                 loadAdminsList();
             } catch (e) {
-                alert('Ошибка при назначении админа');
+                alert('Ошибка назначения админа');
             }
         }
 
         async function removeAdmin(targetId) {
-            if (!confirm('Удалить права администратора?')) return;
+            if (!confirm('Снять этого администратора?')) return;
             try {
                 const res = await fetch('/api/admin/remove-admin', {
                     method: 'POST',
@@ -1896,7 +1917,7 @@
                 if (data.error) { alert(data.error); return; }
                 loadAdminsList();
             } catch (e) {
-                alert('Ошибка при удалении админа');
+                alert('Ошибка снятия админа');
             }
         }
 
@@ -1912,7 +1933,7 @@
                 }
                 const logs = data.logs || [];
                 if (logs.length === 0) {
-                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Логи отсутствуют</div>';
+                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Нет логов</div>';
                     return;
                 }
 
@@ -1924,11 +1945,11 @@
                     card.style.alignItems = 'flex-start';
                     card.style.gap = '4px';
                     
-                    const timeStr = l.created_at ? new Date(l.created_at).toLocaleString() : '';
+                    const dateStr = new Date(l.created_at).toLocaleString();
                     card.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; width:100%; font-size:10px; color:var(--text-muted);">
-                            <span style="color:var(--primary); font-weight:700;">@${l.admin_username || l.admin_id}</span>
-                            <span>${timeStr}</span>
+                        <div style="display:flex; justify-content:space-width; width:100%; justify-content: space-between;">
+                            <span style="font-weight:700; color:var(--primary); font-size:11px;">@${l.admin_username}</span>
+                            <span style="font-size:9px; color:var(--text-muted);">${dateStr}</span>
                         </div>
                         <div style="font-weight:700; color:var(--text-main); font-size:11px;">[${l.action}]</div>
                         <div style="font-size:11px; color:var(--text-muted); word-break:break-all;">${l.details}</div>
@@ -1936,7 +1957,7 @@
                     listEl.appendChild(card);
                 });
             } catch (e) {
-                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Доступно только главному администратору</div>';
+                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки логов</div>';
             }
         }
     </script>
