@@ -272,7 +272,6 @@ app.get('/api/status', authMiddleware, async (req, res) => {
       return res.json({ isBanned: true });
     }
 
-    // Если пользователь администратор — перезарядки нет вовсе
     if (adminCheck.isAdmin) {
       return res.json({ isBanned: false, canSpin: true });
     }
@@ -335,7 +334,6 @@ app.post('/api/spin', authMiddleware, async (req, res) => {
       return res.status(403).json({ isBanned: true, error: 'Аккаунт заблокирован' });
     }
 
-    // Проверка кулдауна только для обычных пользователей (админы могут крутить без ограничения)
     if (!adminCheck.isAdmin && user && user.last_spin) {
       const lastSpinTime = new Date(user.last_spin).getTime();
       const now = Date.now();
