@@ -279,7 +279,6 @@
             font-weight: 600;
         }
 
-        /* Замена рамки на вертикальную полоску по центру рулетки */
         .selector-center-box {
             position: absolute;
             top: 0;
@@ -807,7 +806,6 @@
             <div class="admin-list" id="admins-list-container" style="width: 100%;"></div>
         </div>
 
-        <!-- Исправлено отображение кнопки «Обновить» и структуры в разделе логов админов -->
         <div id="admin-sub-logs" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
             <button class="spin-btn" style="padding: 10px; font-size: 11px; margin-bottom: 8px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); flex-shrink: 0;" onclick="loadAdminLogs()">🔄 Обновить логи</button>
             <div class="admin-list" id="admin-logs-list" style="width: 100%;">
@@ -888,10 +886,44 @@
             });
         }
 
+        // Мгновенная предварительная установка дизайна из кэша sessionStorage (убирает мерцание/подгрузку)
+        (function applyCachedSettings() {
+            try {
+                const cached = sessionStorage.getItem('app_settings_cache');
+                if (cached) {
+                    const settings = JSON.parse(cached);
+                    const caseSection = document.getElementById('section-case');
+                    if (settings.homeBackground) {
+                        caseSection.style.backgroundImage = `url('${settings.homeBackground}')`;
+                        caseSection.classList.add('has-custom-bg');
+                    }
+                    if (settings.caseImage) {
+                        const caseIconContainer = document.getElementById('case-preview-icon');
+                        if (settings.caseImage.startsWith('http') || settings.caseImage.startsWith('/')) {
+                            caseIconContainer.innerHTML = `<img src="${settings.caseImage}" alt="Case">`;
+                        } else {
+                            caseIconContainer.innerText = settings.caseImage;
+                        }
+                    }
+                    const logoBox = document.getElementById('header-logo-box');
+                    if (settings.clubLogoImage) {
+                        logoBox.innerHTML = `<img src="${settings.clubLogoImage}" class="club-logo-img" alt="Logo">`;
+                    } else if (settings.clubLogoText) {
+                        logoBox.innerHTML = `<div class="club-logo-text">${settings.clubLogoText}</div>`;
+                    }
+                }
+            } catch(e) {}
+        })();
+
         async function loadAppSettings() {
             try {
                 const res = await fetch('/api/settings');
                 const settings = await res.json();
+                
+                // Сохраняем в сессию, чтобы при перезаходе дизайн применялся мгновенно без моргания
+                try {
+                    sessionStorage.setItem('app_settings_cache', JSON.stringify(settings));
+                } catch(e) {}
                 
                 const savedBg = settings.homeBackground || (window.APP_CONFIG && window.APP_CONFIG.homeBackground);
                 const caseSection = document.getElementById('section-case');
@@ -1118,7 +1150,7 @@
 
             if (sub === 'stats') {
                 loadStats();
-                statsInterval = setInterval(loadStats, 5000);
+                statsInterval = setInterval(loadStats, 2000); // Автообновление статистики в реальном времени каждые 2 секунды
             }
             if (sub === 'ban') loadBannedUsers();
             if (sub === 'users') loadAllUsers();
@@ -1237,28 +1269,23 @@
                 await fetch('/api/admin/settings', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ key: 'clubLogoText', value: '' })
-                });
-
-                const res = await fetch('/api/admin/settings', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
                     body: JSON.stringify({ key: 'clubLogoImage', value: url })
                 });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-
+                await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ key: 'clubLogoText', value: '' })
+                });
+                alert('Логотип успешно обновлен!');
                 loadAppSettings();
-                alert('Логотип клуба успешно изменен для всех пользователей!');
-            } catch (err) {
-                console.error(err);
-                alert('Ошибка сохранения логотипа');
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
             }
         }
 
         async function applyClubLogoText() {
-            const textVal = document.getElementById('logo-text-input').value.trim();
-            if (!textVal) {
+            const text = document.getElementById('logo-text-input').value.trim();
+            if (!text) {
                 alert('Введите текст логотипа');
                 return;
             }
@@ -1267,22 +1294,17 @@
                 await fetch('/api/admin/settings', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ key: 'clubLogoImage', value: '' })
+                    body: JSON.stringify({ key: 'clubLogoText', value: text })
                 });
-
-                const res = await fetch('/api/admin/settings', {
+                await fetch('/api/admin/settings', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ key: 'clubLogoText', value: textVal })
+                    body: JSON.stringify({ key: 'clubLogoImage', value: '' })
                 });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-
+                alert('Текст логотипа успешно обновлен!');
                 loadAppSettings();
-                alert('Текст логотипа клуба успешно изменен для всех пользователей!');
-            } catch (err) {
-                console.error(err);
-                alert('Ошибка сохранения текста логотипа');
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
             }
         }
 
@@ -1294,576 +1316,56 @@
             }
 
             try {
-                const res = await fetch('/api/admin/settings', {
+                await fetch('/api/admin/settings', {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({ key: 'homeBackground', value: url })
                 });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-
+                alert('Фон успешно установлен!');
                 loadAppSettings();
-                alert('Фон успешно изменен для всех пользователей!');
-            } catch (err) {
-                console.error(err);
-                alert('Ошибка сохранения фона');
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
             }
         }
 
         async function removeBackground() {
             try {
-                const res = await fetch('/api/admin/settings', {
+                await fetch('/api/admin/settings', {
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({ key: 'homeBackground', value: '' })
                 });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-
                 document.getElementById('bg-url-input').value = '';
+                alert('Фон удален!');
                 loadAppSettings();
-                alert('Фон удален для всех пользователей.');
-            } catch (err) {
-                console.error(err);
-                alert('Ошибка удаления фона');
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
             }
         }
 
         async function applyCaseIcon() {
-            const url = document.getElementById('case-url-input').value.trim();
-            if (!url) {
-                alert('Введите ссылку, эмодзи или выберите файл');
+            const icon = document.getElementById('case-url-input').value.trim();
+            if (!icon) {
+                alert('Введите иконку или ссылку');
                 return;
             }
 
             try {
-                const res = await fetch('/api/admin/settings', {
+                await fetch('/api/admin/settings', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ key: 'caseImage', value: url })
+                    body: JSON.stringify({ key: 'caseImage', value: icon })
                 });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-
+                alert('Иконка кейса успешно обновлена!');
                 loadAppSettings();
-                alert('Иконка главного кейса успешно обновлена для всех пользователей!');
-            } catch (err) {
-                console.error(err);
-                alert('Ошибка сохранения иконки кейса');
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
             }
         }
 
         function resetCasePreviewState() {
-            document.getElementById('case-preview-container').style.display = 'flex';
             document.getElementById('roller-wrapper-box').style.display = 'none';
-        }
-        resetCasePreviewState();
-
-        function closeWinModal() {
-            document.getElementById('win-modal').style.display = 'none';
-            resetCasePreviewState();
-            checkUserStatus();
-        }
-
-        async function loadInventory() {
-            const listEl = document.getElementById('inventory-list');
-            listEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 12px;">Загрузка...</div>';
-            try {
-                const res = await fetch(`/api/inventory`, { headers: getAuthHeaders() });
-                const data = await res.json();
-                if (!data.items || data.items.length === 0) {
-                    listEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top:20px;">Инвентарь пуст</div>';
-                    return;
-                }
-                listEl.innerHTML = '';
-                data.items.forEach(item => {
-                    let formattedDate = '';
-                    if (item.won_at) {
-                        const dateObj = new Date(item.won_at);
-                        if (!isNaN(dateObj)) {
-                            formattedDate = dateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
-                        }
-                    }
-
-                    const card = document.createElement('div');
-                    card.className = 'inventory-card';
-                    
-                    const infoDiv = document.createElement('div');
-                    infoDiv.style.cssText = 'overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;';
-                    infoDiv.innerHTML = `
-                        <div style="font-weight:700; margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; display: flex; align-items: center; gap: 6px;">
-                            ${getIconHtml(item.icon, '20px')} 
-                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.prize_name}</span>
-                        </div>
-                        <div style="font-size:10px; color:var(--text-muted);">Код: <span style="color:var(--text-main); font-weight:700;">${item.promo}</span></div>
-                        ${formattedDate ? `<div style="font-size:9px; color:var(--text-muted); margin-top:2px;">Получено: ${formattedDate}</div>` : ''}
-                        <div style="font-size:9px; color:var(--text-muted); margin-top:1px;">Срок: ${item.hoursLeft}ч</div>
-                    `;
-
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.type = 'button';
-                    deleteBtn.innerText = 'Удалить';
-                    deleteBtn.onclick = () => deleteInventoryItem(item.id, card);
-
-                    card.appendChild(infoDiv);
-                    card.appendChild(deleteBtn);
-                    listEl.appendChild(card);
-                });
-            } catch (e) {
-                console.error(e);
-                listEl.innerHTML = '<div style="text-align: center; color: var(--secondary);">Ошибка загрузки</div>';
-            }
-        }
-
-        async function deleteInventoryItem(itemId, cardElement) {
-            if (!confirm('Удалить приз?')) return;
-            try {
-                const res = await fetch('/api/inventory/delete', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ itemId: Number(itemId) })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                if (cardElement) {
-                    cardElement.style.transition = 'all 0.3s ease';
-                    cardElement.style.opacity = '0';
-                    cardElement.style.transform = 'scale(0.9)';
-                    setTimeout(() => {
-                        cardElement.remove();
-                        const listEl = document.getElementById('inventory-list');
-                        if (listEl && listEl.children.length === 0) {
-                            listEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top:20px;">Инвентарь пуст</div>';
-                        }
-                    }, 300);
-                } else {
-                    loadInventory();
-                }
-            } catch (err) { 
-                console.error(err);
-                alert('Ошибка удаления'); 
-            }
-        }
-
-        async function loadAdminPrizes() {
-            const listEl = document.getElementById('admin-prizes-list');
-            if (!isPrizesLoadedOnce) {
-                listEl.innerHTML = '<div style="text-align: center; color: var(--text-muted);">Загрузка...</div>';
-            }
-            try {
-                const res = await fetch(`/api/admin/prizes`, { headers: getAuthHeaders() });
-                const data = await res.json();
-                if (!data.prizes) return;
-                cachedServerPrizes = data.prizes;
-
-                if (!isPrizesLoadedOnce || listEl.children.length !== data.prizes.length) {
-                    listEl.innerHTML = '';
-                    data.prizes.forEach(p => {
-                        const card = document.createElement('div');
-                        card.className = 'admin-card';
-                        card.id = `admin-prize-card-${p.id}`;
-                        card.innerHTML = `
-                            <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${getIconHtml(p.icon, '18px')} <b style="overflow: hidden; text-overflow: ellipsis; font-weight:700;">${p.name}</b></div>
-                            <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-                                <input type="number" id="weight-${p.id}" value="${p.weight}" autocomplete="off" onchange="updateWeight(${p.id})">
-                                <button type="button" onclick="deletePrize(${p.id})">Удалить</button>
-                            </div>
-                        `;
-                        listEl.appendChild(card);
-                    });
-                    isPrizesLoadedOnce = true;
-                } else {
-                    data.prizes.forEach(p => {
-                        const input = document.getElementById(`weight-${p.id}`);
-                        if (input && document.activeElement !== input) {
-                            input.value = p.weight;
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function loadStats() {
-            const statsBox = document.getElementById('stats-content');
-            try {
-                const res = await fetch(`/api/admin/stats`, { headers: getAuthHeaders() });
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
-                statsBox.innerHTML = `
-                    <div class="stat-card">
-                        <div class="stat-card-info">
-                            <div class="stat-icon">🌅</div>
-                            <div>
-                                <div class="stat-title">Открыто кейсов сегодня</div>
-                                <div class="stat-value">${data.todaySpins}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-info">
-                            <div class="stat-icon">🎁</div>
-                            <div>
-                                <div class="stat-title">Всего открытий кейсов</div>
-                                <div class="stat-value">${data.totalSpins}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-info">
-                            <div class="stat-icon">👥</div>
-                            <div>
-                                <div class="stat-title">Всего игроков</div>
-                                <div class="stat-value">${data.totalUsers}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-info">
-                            <div class="stat-icon" style="color: var(--secondary);">🛡️</div>
-                            <div>
-                                <div class="stat-title">Заблокировано</div>
-                                <div class="stat-value" style="color: var(--secondary);">${data.bannedUsers}</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } catch (e) { 
-                console.error(e);
-                statsBox.innerHTML = '<div style="text-align:center; color:var(--secondary); font-size:12px;">Ошибка загрузки статистики</div>'; 
-            }
-        }
-
-        async function loadBannedUsers() {
-            const listEl = document.getElementById('banned-users-list');
-            try {
-                const res = await fetch(`/api/admin/banned-list`, { headers: getAuthHeaders() });
-                const data = await res.json();
-                if (!data.bannedUsers || data.bannedUsers.length === 0) {
-                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">Нет заблокированных</div>';
-                    return;
-                }
-                listEl.innerHTML = '';
-                data.bannedUsers.forEach(u => {
-                    if (u.username && u.username.toLowerCase() === 'ropogku') return;
-                    const card = document.createElement('div');
-                    card.className = 'admin-card';
-                    const displayName = formatUserDisplay(u.username, u.id);
-                    card.innerHTML = `<div>${displayName}</div><button type="button" style="background:var(--card-bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="quickUnban('${u.id}')">Разбан</button>`;
-                    listEl.appendChild(card);
-                });
-            } catch (e) { console.error(e); }
-        }
-
-        async function loadAllUsers() {
-            const listEl = document.getElementById('all-users-list');
-            try {
-                const res = await fetch(`/api/admin/users-list`, { headers: getAuthHeaders() });
-                const data = await res.json();
-                if (!data.users || data.users.length === 0) {
-                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px; margin-top:20px;">Нет пользователей</div>';
-                    return;
-                }
-                listEl.innerHTML = '';
-                data.users.forEach(u => {
-                    const isRopogkuUser = (u.username && u.username.toLowerCase() === 'ropogku') || u.id === 'ropogku' || u.id === 'ropogku_id';
-                    const displayName = formatUserDisplay(u.username, u.id);
-                    const targetIdentifier = u.id;
-
-                    const card = document.createElement('div');
-                    card.className = 'admin-card';
-
-                    let menuHtml = '';
-                    if (!isRopogkuUser) {
-                        menuHtml = `
-                            <div class="user-menu-wrap" style="position:relative;">
-                                <button type="button" class="admin-dots-btn" onclick="toggleUserMenu(event, '${targetIdentifier}')">⚙️</button>
-                                <div class="user-dropdown-menu" id="user-menu-${targetIdentifier}">
-                                    <button type="button" class="admin-dropdown-item" style="color:var(--secondary);" onclick="actionUserBan('${targetIdentifier}', 1)">🛡️ Забанить</button>
-                                    <button type="button" class="admin-dropdown-item" onclick="actionUserBan('${targetIdentifier}', 0)">✅ Разбанить</button>
-                                    <button type="button" class="admin-dropdown-item" onclick="actionResetTimer('${targetIdentifier}')">⏳ Сбросить таймер</button>
-                                    <button type="button" class="admin-dropdown-item" onclick="actionMakeAdmin('${targetIdentifier}')">🔑 Назначить админом</button>
-                                    <button type="button" class="admin-dropdown-item" style="color:var(--secondary);" onclick="deleteUser('${targetIdentifier}')">🗑️ Удалить</button>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        menuHtml = `<div style="font-size:10px; color:var(--text-muted);">Главный админ</div>`;
-                    }
-
-                    card.innerHTML = `
-                        <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">${displayName}</div>
-                        ${menuHtml}
-                    `;
-                    listEl.appendChild(card);
-                });
-            } catch (e) { console.error(e); }
-        }
-
-        async function loadAdminLogs() {
-            const listEl = document.getElementById('admin-logs-list');
-            if (!isSuperAdmin) {
-                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary); font-size:12px;">Доступно только супер-администратору</div>';
-                return;
-            }
-            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка логов...</div>';
-            try {
-                const res = await fetch('/api/admin/logs', { headers: getAuthHeaders() });
-                const data = await res.json();
-                if (data.error) {
-                    listEl.innerHTML = `<div style="text-align:center; color:var(--secondary);">${data.error}</div>`;
-                    return;
-                }
-                if (!data.logs || data.logs.length === 0) {
-                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Логи пока пусты</div>';
-                    return;
-                }
-                listEl.innerHTML = '';
-                data.logs.forEach(log => {
-                    const card = document.createElement('div');
-                    card.className = 'admin-card';
-                    card.style.flexDirection = 'column';
-                    card.style.alignItems = 'flex-start';
-                    card.style.gap = '4px';
-
-                    const dateStr = new Date(log.created_at).toLocaleString('ru-RU');
-                    card.innerHTML = `
-                        <div style="display:flex; width:100%; justify-content:space-between;">
-                            <span style="color:var(--primary); font-weight:700;">@${log.admin_username}</span>
-                            <span style="font-size:10px; color:var(--text-muted);">${dateStr}</span>
-                        </div>
-                        <div style="font-size:11px; font-weight:700; color:var(--text-main);">Действие: ${log.action}</div>
-                        <div style="font-size:11px; color:var(--text-muted); word-break:break-all;">Детали: ${log.details}</div>
-                    `;
-                    listEl.appendChild(card);
-                });
-            } catch (e) {
-                console.error(e);
-                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки логов</div>';
-            }
-        }
-
-        async function loadAdminsList() {
-            const listEl = document.getElementById('admins-list-container');
-            try {
-                const res = await fetch('/api/admin/list', { headers: getAuthHeaders() });
-                const data = await res.json();
-                if (!data.admins) return;
-                listEl.innerHTML = '';
-                data.admins.forEach(adm => {
-                    const isMain = adm.username.toLowerCase() === 'ropogku' || adm.is_super === 1;
-                    const card = document.createElement('div');
-                    card.className = 'admin-card';
-                    
-                    let removeBtnHtml = '';
-                    if (!isMain && isSuperAdmin) {
-                        removeBtnHtml = `<button type="button" onclick="removeAdmin('${adm.id}')">Удалить</button>`;
-                    } else if (isMain) {
-                        removeBtnHtml = `<span style="font-size:10px; color:var(--primary);">Главный</span>`;
-                    }
-
-                    card.innerHTML = `
-                        <div>@${adm.username} ${adm.is_super ? '(Супер)' : ''}</div>
-                        ${removeBtnHtml}
-                    `;
-                    listEl.appendChild(card);
-                });
-            } catch (e) { console.error(e); }
-        }
-
-        async function addPrize() {
-            const name = document.getElementById('new-name').value.trim();
-            const icon = document.getElementById('new-icon').value.trim();
-            const rarity = document.getElementById('new-rarity').value.trim() || 'common';
-            const weight = document.getElementById('new-weight').value.trim() || '1';
-            const promo_prefix = document.getElementById('new-promo').value.trim() || 'CYBER';
-
-            if (!name) { alert('Введите название приза'); return; }
-
-            try {
-                const res = await fetch('/api/admin/add-prize', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ name, icon, rarity, weight: Number(weight), promo_prefix })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-
-                document.getElementById('new-name').value = '';
-                document.getElementById('new-icon').value = '';
-                document.getElementById('new-rarity').value = '';
-                document.getElementById('new-weight').value = '';
-                document.getElementById('new-promo').value = '';
-
-                alert('Приз успешно добавлен!');
-                isPrizesLoadedOnce = false;
-                switchAdminSub('prizes');
-            } catch (e) {
-                console.error(e);
-                alert('Ошибка добавления приза');
-            }
-        }
-
-        async function deletePrize(prizeId) {
-            if (!confirm('Удалить этот приз из рулетки?')) return;
-            try {
-                const res = await fetch('/api/admin/delete-prize', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ prizeId: Number(prizeId) })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                isPrizesLoadedOnce = false;
-                loadAdminPrizes();
-            } catch (e) { console.error(e); }
-        }
-
-        async function updateWeight(prizeId) {
-            const input = document.getElementById(`weight-${prizeId}`);
-            if (!input) return;
-            const weight = Number(input.value);
-            try {
-                await fetch('/api/admin/update-prize', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ prizeId: Number(prizeId), weight })
-                });
-            } catch (e) { console.error(e); }
-        }
-
-        async function setBanStatus(banState) {
-            const targetIdentifier = document.getElementById('ban-username').value.trim();
-            if (!targetIdentifier) { alert('Введите юзернейм или ID'); return; }
-            try {
-                const res = await fetch('/api/admin/ban', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier, banState })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                alert(banState === 1 ? 'Пользователь заблокирован' : 'Пользователь разблокирован');
-                document.getElementById('ban-username').value = '';
-                loadBannedUsers();
-            } catch (e) { console.error(e); }
-        }
-
-        async function quickUnban(userId) {
-            try {
-                await fetch('/api/admin/ban', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier: userId, banState: 0 })
-                });
-                loadBannedUsers();
-            } catch (e) { console.error(e); }
-        }
-
-        async function resetTimer() {
-            const targetIdentifier = document.getElementById('ban-username').value.trim();
-            if (!targetIdentifier) { alert('Введите юзернейм или ID'); return; }
-            try {
-                const res = await fetch('/api/admin/reset-timer', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                alert('Таймер кейса сброшен!');
-                document.getElementById('ban-username').value = '';
-            } catch (e) { console.error(e); }
-        }
-
-        async function actionUserBan(targetIdentifier, banState) {
-            try {
-                const res = await fetch('/api/admin/ban', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier, banState })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                alert(banState === 1 ? 'Пользователь заблокирован' : 'Пользователь разблокирован');
-                loadAllUsers();
-            } catch (e) { console.error(e); }
-        }
-
-        async function actionResetTimer(targetIdentifier) {
-            try {
-                const res = await fetch('/api/admin/reset-timer', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                alert('Таймер сброшен!');
-                loadAllUsers();
-            } catch (e) { console.error(e); }
-        }
-
-        async function actionMakeAdmin(targetIdentifier) {
-            if (!isSuperAdmin) { alert('Только супер-администратор может назначать админов'); return; }
-            try {
-                const res = await fetch('/api/admin/add-admin', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                alert('Администратор успешно назначен!');
-                loadAllUsers();
-            } catch (e) { console.error(e); }
-        }
-
-        async function deleteUser(targetIdentifier) {
-            if (!confirm('Удалить пользователя и все его данные/инвентарь?')) return;
-            try {
-                const res = await fetch('/api/admin/delete-user', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                alert('Пользователь удален');
-                loadAllUsers();
-            } catch (e) { console.error(e); }
-        }
-
-        async function addNewAdmin() {
-            const targetIdentifier = document.getElementById('new-admin-username').value.trim();
-            if (!targetIdentifier) { alert('Введите юзернейм или ID'); return; }
-            try {
-                const res = await fetch('/api/admin/add-admin', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                alert('Администратор добавлен!');
-                document.getElementById('new-admin-username').value = '';
-                loadAdminsList();
-            } catch (e) { console.error(e); }
-        }
-
-        async function removeAdmin(targetIdentifier) {
-            if (!confirm('Удалить права администратора?')) return;
-            try {
-                const res = await fetch('/api/admin/remove-admin', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier })
-                });
-                const data = await res.json();
-                if (data.error) { alert(data.error); return; }
-                loadAdminsList();
-            } catch (e) { console.error(e); }
+            document.getElementById('case-preview-container').style.display = 'flex';
         }
 
         async function startCase() {
@@ -1876,90 +1378,565 @@
             msg.innerText = '';
 
             try {
-                const prizesRes = await fetch('/api/admin/prizes', { headers: getAuthHeaders() });
-                const prizesData = await prizesRes.json();
-                const serverPrizes = prizesData.prizes;
-
-                if (!serverPrizes || serverPrizes.length === 0) {
-                    alert('Призы не настроены администратором');
-                    isSpinning = false;
-                    btn.disabled = false;
-                    return;
-                }
-
-                const spinRes = await fetch('/api/spin', {
+                const res = await fetch('/api/spin', {
                     method: 'POST',
                     headers: getAuthHeaders()
                 });
-                const spinData = await spinRes.json();
+                const data = await res.json();
 
-                if (spinData.error) {
-                    alert(spinData.error);
+                if (data.error) {
+                    alert(data.error);
                     isSpinning = false;
                     checkUserStatus();
                     return;
                 }
 
-                const wonPrize = spinData.prize;
-                const wonPromo = spinData.promo;
+                const prizesRes = await fetch('/api/admin/prizes', { headers: getAuthHeaders() });
+                const prizesData = await prizesRes.json();
+                const allPrizes = prizesData.prizes || [];
 
-                document.getElementById('case-preview-container').style.display = 'none';
-                const rollerWrapper = document.getElementById('roller-wrapper-box');
-                rollerWrapper.style.display = 'flex';
-
-                const rollerContent = document.getElementById('roller-content');
-                
-                let listHtml = '';
-                const totalItemsCount = 60;
-                const winningIndex = 48;
-
-                for (let i = 0; i < totalItemsCount; i++) {
-                    let p = serverPrizes[Math.floor(Math.random() * serverPrizes.length)];
-                    if (i === winningIndex) {
-                        p = serverPrizes.find(item => item.name === wonPrize.name) || serverPrizes[0];
-                    }
-
-                    let rarityClass = '';
-                    if (p.rarity === 'rare') rarityClass = 'prize-rare';
-                    else if (p.rarity === 'epic') rarityClass = 'prize-epic';
-                    else if (p.rarity === 'legendary') rarityClass = 'prize-legendary';
-
-                    listHtml += `
-                        <div class="prize-item ${rarityClass}">
-                            <div class="prize-icon-wrap">${getIconHtml(p.icon, '36px')}</div>
-                            <div class="prize-name">${p.name}</div>
-                            <div class="prize-desc">${p.rarity || 'common'}</div>
-                        </div>
-                    `;
+                if (allPrizes.length === 0) {
+                    alert('Призы не настроены');
+                    isSpinning = false;
+                    checkUserStatus();
+                    return;
                 }
 
-                rollerContent.innerHTML = listHtml;
+                document.getElementById('case-preview-container').style.display = 'none';
+                document.getElementById('roller-wrapper-box').style.display = 'flex';
+
+                const rollerContent = document.getElementById('roller-content');
+                rollerContent.innerHTML = '';
+
+                let itemsList = [];
+                for (let i = 0; i < 50; i++) {
+                    const rnd = allPrizes[Math.floor(Math.random() * allPrizes.length)];
+                    itemsList.push(rnd);
+                }
+
+                const winningIndex = 42;
+                itemsList[winningIndex] = allPrizes.find(p => p.name === data.prize.name) || itemsList[winningIndex];
+
+                itemsList.forEach((p) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = `prize-item prize-${p.rarity || 'common'}`;
+                    itemDiv.innerHTML = `
+                        <div class="prize-icon-wrap">${getIconHtml(p.icon, '38px')}</div>
+                        <div class="prize-name">${p.name}</div>
+                        <div class="prize-desc">${p.rarity || 'common'}</div>
+                    `;
+                    rollerContent.appendChild(itemDiv);
+                });
+
                 rollerContent.style.transition = 'none';
                 rollerContent.style.left = '0px';
+
                 void rollerContent.offsetWidth;
 
-                const itemWidth = 144; // 136px width + 8px margins (4px left/right)
-                const windowWidth = document.getElementById('roller-window').clientWidth;
-                const targetCenterOffset = winningIndex * itemWidth + (itemWidth / 2) - (windowWidth / 2);
-                const randomOffset = (Math.random() * 80) - 40; 
-                const finalLeft = -(targetCenterOffset + randomOffset);
+                const itemWidth = 144;
+                const rollerWindowWidth = document.getElementById('roller-window').clientWidth;
+                const centerOffset = rollerWindowWidth / 2 - itemWidth / 2;
+                const randomOffset = (Math.random() * 80) - 40;
+                const targetLeft = -(winningIndex * itemWidth) + centerOffset + randomOffset;
 
-                rollerContent.style.transition = 'left 5s cubic-bezier(0.08, 0.82, 0.12, 1)';
-                rollerContent.style.left = `${finalLeft}px`;
+                rollerContent.style.transition = 'left 5s cubic-bezier(0.08, 0.82, 0.14, 1)';
+                rollerContent.style.left = `${targetLeft}px`;
 
                 setTimeout(() => {
                     isSpinning = false;
-                    document.getElementById('win-modal-icon').innerHTML = getIconHtml(wonPrize.icon, '52px');
-                    document.getElementById('win-modal-title').innerText = wonPrize.name;
-                    document.getElementById('win-modal-promo').innerText = wonPromo;
-                    document.getElementById('win-modal').style.display = 'flex';
+                    showWinModal(data.prize, data.promo);
+                    checkUserStatus();
                 }, 5200);
 
             } catch (e) {
-                console.error(e);
+                console.error('Spin execution error:', e);
+                alert('Произошла ошибка при открытии кейса');
                 isSpinning = false;
                 checkUserStatus();
-                alert('Произошла ошибка при открытии кейса');
+                resetCasePreviewState();
+            }
+        }
+
+        function showWinModal(prize, promo) {
+            document.getElementById('win-modal-icon').innerHTML = getIconHtml(prize.icon, '52px');
+            document.getElementById('win-modal-title').innerText = prize.name;
+            document.getElementById('win-modal-promo').innerText = promo;
+            document.getElementById('win-modal').style.display = 'flex';
+        }
+
+        function closeWinModal() {
+            document.getElementById('win-modal').style.display = 'none';
+            resetCasePreviewState();
+            switchTab('inventory');
+        }
+
+        async function loadInventory() {
+            const listEl = document.getElementById('inventory-list');
+            listEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 20px;">Загрузка инвентаря...</div>';
+
+            try {
+                const res = await fetch('/api/inventory', { headers: getAuthHeaders() });
+                const data = await res.json();
+                const items = data.items || [];
+
+                if (items.length === 0) {
+                    listEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 30px;">Инвентарь пуст</div>';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                items.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'inventory-card';
+                    card.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 32px; display:flex; align-items:center;">${getIconHtml(item.icon, '36px')}</div>
+                            <div>
+                                <div style="font-weight: 800; font-size: 13px; color: var(--text-main); margin-bottom: 2px;">${item.prize_name}</div>
+                                <div style="font-size: 11px; color: var(--primary); font-weight: 700;">${item.promo}</div>
+                                <div style="font-size: 9px; color: var(--text-muted); margin-top: 2px;">Удалится через: ${item.hoursLeft}ч</div>
+                            </div>
+                        </div>
+                        <button onclick="deleteInventoryItem(${item.id})">Удалить</button>
+                    `;
+                    listEl.appendChild(card);
+                });
+            } catch (e) {
+                listEl.innerHTML = '<div style="text-align: center; color: var(--secondary); font-size: 12px; margin-top: 20px;">Ошибка загрузки</div>';
+            }
+        }
+
+        async function deleteInventoryItem(itemId) {
+            try {
+                await fetch('/api/inventory/delete', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ itemId })
+                });
+                loadInventory();
+            } catch (e) {
+                alert('Ошибка при удалении');
+            }
+        }
+
+        async function loadAdminPrizes() {
+            const listEl = document.getElementById('admin-prizes-list');
+            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка призов...</div>';
+
+            try {
+                const res = await fetch('/api/admin/prizes', { headers: getAuthHeaders() });
+                const data = await res.json();
+                const prizes = data.prizes || [];
+
+                if (prizes.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Нет призов</div>';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                prizes.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = 'admin-card';
+                    card.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="font-size:28px; display:flex; align-items:center;">${getIconHtml(p.icon, '30px')}</div>
+                            <div>
+                                <div style="font-weight:800; color:var(--text-main);">${p.name}</div>
+                                <div style="font-size:10px; color:var(--text-muted);">Шанс (вес):</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="number" value="${p.weight}" id="weight-input-${p.id}" onchange="updatePrizeWeight(${p.id})">
+                            <button onclick="deletePrize(${p.id})">Удалить</button>
+                        </div>
+                    `;
+                    listEl.appendChild(card);
+                });
+            } catch (e) {
+                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки</div>';
+            }
+        }
+
+        async function updatePrizeWeight(prizeId) {
+            const input = document.getElementById(`weight-input-${prizeId}`);
+            if (!input) return;
+            const weight = Number(input.value);
+
+            try {
+                await fetch('/api/admin/update-prize', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ prizeId, weight })
+                });
+            } catch (e) {
+                alert('Ошибка обновления шанса');
+            }
+        }
+
+        async function addPrize() {
+            const name = document.getElementById('new-name').value.trim();
+            const icon = document.getElementById('new-icon').value.trim();
+            const rarity = document.getElementById('new-rarity').value.trim() || 'common';
+            const weight = Number(document.getElementById('new-weight').value) || 1;
+            const promo_prefix = document.getElementById('new-promo').value.trim() || 'CYBER';
+
+            if (!name) {
+                alert('Введите название приза');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/admin/add-prize', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ name, icon, rarity, weight, promo_prefix })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-icon').value = '';
+                document.getElementById('new-rarity').value = '';
+                document.getElementById('new-weight').value = '';
+                document.getElementById('new-promo').value = '';
+
+                alert('Приз успешно добавлен!');
+                switchAdminSub('prizes');
+            } catch (e) {
+                alert('Ошибка при добавлении приза');
+            }
+        }
+
+        async function deletePrize(prizeId) {
+            if (!confirm('Удалить этот приз?')) return;
+            try {
+                await fetch('/api/admin/delete-prize', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ prizeId })
+                });
+                loadAdminPrizes();
+            } catch (e) {
+                alert('Ошибка при удалении');
+            }
+        }
+
+        async function loadStats() {
+            const statsContainer = document.getElementById('stats-content');
+            try {
+                const res = await fetch('/api/admin/stats', { headers: getAuthHeaders() });
+                const stats = await res.json();
+                if (stats.error) return;
+
+                statsContainer.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-card-info">
+                            <div class="stat-icon">👥</div>
+                            <div>
+                                <div class="stat-title">Всего игроков</div>
+                                <div class="stat-value">${stats.totalUsers}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-info">
+                            <div class="stat-icon">🛡️</div>
+                            <div>
+                                <div class="stat-title">Заблокировано</div>
+                                <div class="stat-value">${stats.bannedUsers}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-info">
+                            <div class="stat-icon">🎁</div>
+                            <div>
+                                <div class="stat-title">Всего открытий кейса</div>
+                                <div class="stat-value">${stats.totalSpins}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-info">
+                            <div class="stat-icon">📈</div>
+                            <div>
+                                <div class="stat-title">Открытий сегодня</div>
+                                <div class="stat-value">${stats.todaySpins}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                console.error('Stats update error:', e);
+            }
+        }
+
+        async function loadBannedUsers() {
+            const listEl = document.getElementById('banned-users-list');
+            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка...</div>';
+            try {
+                const res = await fetch('/api/admin/banned-list', { headers: getAuthHeaders() });
+                const data = await res.json();
+                const users = data.bannedUsers || [];
+
+                if (users.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Нет заблокированных пользователей</div>';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                users.forEach(u => {
+                    const card = document.createElement('div');
+                    card.className = 'admin-card';
+                    card.innerHTML = `
+                        <div style="font-weight:700; color:var(--text-main);">${formatUserDisplay(u.username, u.id)}</div>
+                        <button onclick="quickUnban('${u.id}')">Разблокировать</button>
+                    `;
+                    listEl.appendChild(card);
+                });
+            } catch (e) {
+                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки</div>';
+            }
+        }
+
+        async function setBanStatus(state) {
+            const input = document.getElementById('ban-username').value.trim();
+            if (!input) {
+                alert('Введите юзернейм или ID пользователя');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/admin/ban', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier: input, banState: state })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                alert('Статус бана успешно обновлен!');
+                document.getElementById('ban-username').value = '';
+                loadBannedUsers();
+            } catch (e) {
+                alert('Ошибка при изменении статуса бана');
+            }
+        }
+
+        async function quickUnban(targetId) {
+            try {
+                await fetch('/api/admin/ban', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier: targetId, banState: 0 })
+                });
+                loadBannedUsers();
+            } catch (e) {
+                alert('Ошибка разбана');
+            }
+        }
+
+        async function resetTimer() {
+            const input = document.getElementById('ban-username').value.trim();
+            if (!input) {
+                alert('Введите юзернейм или ID пользователя');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/admin/reset-timer', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier: input })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                alert('Таймер успешно сброшен!');
+                document.getElementById('ban-username').value = '';
+            } catch (e) {
+                alert('Ошибка при сбросе таймера');
+            }
+        }
+
+        async function loadAllUsers() {
+            const listEl = document.getElementById('all-users-list');
+            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка списка игроков...</div>';
+
+            try {
+                const res = await fetch('/api/admin/users-list', { headers: getAuthHeaders() });
+                const data = await res.json();
+                const users = data.users || [];
+
+                if (users.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Нет зарегистрированных игроков</div>';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                users.forEach(u => {
+                    const isBanned = u.is_banned === 1;
+                    const card = document.createElement('div');
+                    card.className = 'admin-card';
+                    card.innerHTML = `
+                        <div>
+                            <div style="font-weight:800; color:var(--text-main);">${formatUserDisplay(u.username, u.id)}</div>
+                            <div style="font-size:10px; color:${isBanned ? 'var(--secondary)' : 'var(--text-muted)'};">${isBanned ? 'Заблокирован' : 'Активен'}</div>
+                        </div>
+                        <div class="user-menu-wrap" style="position:relative;">
+                            <button style="background:var(--card-bg); color:var(--text-main); border:1px solid var(--border-color);" onclick="toggleUserMenu(event, '${u.id}')">⚙️ Действия</button>
+                            <div class="user-dropdown-menu" id="user-menu-${u.id}">
+                                <button class="admin-dropdown-item" onclick="userActionBan('${u.id}', ${isBanned ? 0 : 1})">${isBanned ? '🟢 Разблокировать' : '🔴 Заблокировать'}</button>
+                                <button class="admin-dropdown-item" onclick="userActionReset('${u.id}')">⏱️ Сбросить таймер</button>
+                                <button class="admin-dropdown-item" style="color:var(--secondary);" onclick="userActionDelete('${u.id}')">🗑️ Удалить игрока</button>
+                            </div>
+                        </div>
+                    `;
+                    listEl.appendChild(card);
+                });
+            } catch (e) {
+                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки игроков</div>';
+            }
+        }
+
+        async function userActionBan(userId, state) {
+            try {
+                await fetch('/api/admin/ban', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier: userId, banState: state })
+                });
+                loadAllUsers();
+            } catch (e) { alert('Ошибка'); }
+        }
+
+        async function userActionReset(userId) {
+            try {
+                await fetch('/api/admin/reset-timer', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier: userId })
+                });
+                alert('Таймер сброшен!');
+                loadAllUsers();
+            } catch (e) { alert('Ошибка'); }
+        }
+
+        async function userActionDelete(userId) {
+            if (!confirm('Удалить этого игрока и его инвентарь?')) return;
+            try {
+                const res = await fetch('/api/admin/delete-user', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier: userId })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                loadAllUsers();
+            } catch (e) { alert('Ошибка удаления'); }
+        }
+
+        async function loadAdminsList() {
+            const listEl = document.getElementById('admins-list-container');
+            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка...</div>';
+            try {
+                const res = await fetch('/api/admin/list', { headers: getAuthHeaders() });
+                const data = await res.json();
+                const admins = data.admins || [];
+
+                listEl.innerHTML = '';
+                admins.forEach(a => {
+                    const isSuper = a.is_super === 1;
+                    const card = document.createElement('div');
+                    card.className = 'admin-card';
+                    card.innerHTML = `
+                        <div>
+                            <div style="font-weight:800; color:var(--text-main);">${formatUserDisplay(a.username, a.id)}</div>
+                            <div style="font-size:10px; color:${isSuper ? 'var(--primary)' : 'var(--text-muted)'};">${isSuper ? 'Главный администратор' : 'Администратор'}</div>
+                        </div>
+                        ${(isSuper || !isSuperAdmin) ? '' : `<button onclick="removeAdmin('${a.id}')">Удалить</button>`}
+                    `;
+                    listEl.appendChild(card);
+                });
+            } catch (e) {
+                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки</div>';
+            }
+        }
+
+        async function addNewAdmin() {
+            const input = document.getElementById('new-admin-username').value.trim();
+            if (!input) {
+                alert('Введите юзернейм или ID');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/admin/add-admin', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier: input })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                document.getElementById('new-admin-username').value = '';
+                alert('Администратор успешно назначен!');
+                loadAdminsList();
+            } catch (e) {
+                alert('Ошибка при назначении админа');
+            }
+        }
+
+        async function removeAdmin(targetId) {
+            if (!confirm('Удалить права администратора?')) return;
+            try {
+                const res = await fetch('/api/admin/remove-admin', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier: targetId })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                loadAdminsList();
+            } catch (e) {
+                alert('Ошибка при удалении админа');
+            }
+        }
+
+        async function loadAdminLogs() {
+            const listEl = document.getElementById('admin-logs-list');
+            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка логов...</div>';
+            try {
+                const res = await fetch('/api/admin/logs', { headers: getAuthHeaders() });
+                const data = await res.json();
+                if (data.error) {
+                    listEl.innerHTML = `<div style="text-align:center; color:var(--secondary); font-size:12px;">${data.error}</div>`;
+                    return;
+                }
+                const logs = data.logs || [];
+                if (logs.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Логи отсутствуют</div>';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                logs.forEach(l => {
+                    const card = document.createElement('div');
+                    card.className = 'admin-card';
+                    card.style.flexDirection = 'column';
+                    card.style.alignItems = 'flex-start';
+                    card.style.gap = '4px';
+                    
+                    const timeStr = l.created_at ? new Date(l.created_at).toLocaleString() : '';
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; width:100%; font-size:10px; color:var(--text-muted);">
+                            <span style="color:var(--primary); font-weight:700;">@${l.admin_username || l.admin_id}</span>
+                            <span>${timeStr}</span>
+                        </div>
+                        <div style="font-weight:700; color:var(--text-main); font-size:11px;">[${l.action}]</div>
+                        <div style="font-size:11px; color:var(--text-muted); word-break:break-all;">${l.details}</div>
+                    `;
+                    listEl.appendChild(card);
+                });
+            } catch (e) {
+                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Доступно только главному администратору</div>';
             }
         }
     </script>
