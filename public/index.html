@@ -74,41 +74,6 @@
             border-color: var(--border-active);
         }
 
-        .header-logo-container {
-            width: 180px;
-            height: 64px;
-            background: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
-        }
-
-        .club-logo-img {
-            max-height: 52px;
-            max-width: 100%;
-            object-fit: contain;
-            filter: drop-shadow(0 2px 12px rgba(0,0,0,0.4));
-        }
-
-        .club-logo-text {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text-main);
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            white-space: nowrap;
-            text-align: center;
-            line-height: 1;
-        }
-        .club-logo-text span {
-            color: var(--primary);
-        }
-
         .view-section {
             display: none;
             flex-direction: column;
@@ -682,7 +647,6 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* Эффект эпичного / легендарного выпадения */
         .win-modal-card.legendary-win {
             border-color: #FFD700 !important;
             box-shadow: 0 24px 60px rgba(0,0,0,0.9), 0 0 50px rgba(255, 215, 0, 0.5) !important;
@@ -720,9 +684,6 @@
     <div class="top-bar">
         <button class="admin-entry-btn" id="admin-entry-btn" onclick="switchTab('admin')">⚙️</button>
         <button class="admin-entry-btn" id="exit-admin-btn" onclick="switchTab('case')" style="display: none;">✕</button>
-        <div class="header-logo-container" id="header-logo-box">
-            <div class="club-logo-text" id="club-logo-text">CASE <span>LOUNGE</span></div>
-        </div>
     </div>
 
     <div id="section-case" class="view-section active">
@@ -763,7 +724,7 @@
                     <button class="admin-dropdown-item" id="subtab-users" onclick="switchAdminSub('users')">👥 Игроки</button>
                     <button class="admin-dropdown-item" id="subtab-admins" onclick="switchAdminSub('admins')">🔑 Админы</button>
                     <button class="admin-dropdown-item" id="subtab-logs" onclick="switchAdminSub('logs')">📜 Логи админов</button>
-                    <button class="admin-dropdown-item" id="subtab-background" onclick="switchAdminSub('background')">🖼️ Дизайн и Логотип</button>
+                    <button class="admin-dropdown-item" id="subtab-background" onclick="switchAdminSub('background')">🖼️ Фон и Кейс</button>
                 </div>
             </div>
         </div>
@@ -832,16 +793,6 @@
 
         <div id="admin-sub-background" class="admin-sub-section" style="display:none; flex-direction:column; width:100%; flex:1; overflow-y:auto; padding-bottom: 10px;">
             <div class="add-prize-form" style="margin-top:0;">
-                <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Логотип клуба (картинка)</div>
-                <input type="file" id="logo-file-input" accept="image/*" style="display: none;" onchange="handleLogoUpload(event)">
-                <button class="spin-btn" style="padding: 11px; font-size: 11px; margin-bottom: 6px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="document.getElementById('logo-file-input').click()">📁 Загрузить файл логотипа</button>
-                <input type="text" id="logo-url-input" placeholder="Или прямая ссылка на логотип" autocomplete="off">
-                <button class="spin-btn" style="padding: 11px; font-size: 11px; margin-top: 4px; margin-bottom: 12px;" onclick="applyClubLogoImage()">Установить логотип-картинку</button>
-
-                <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Название клуба (Текст)</div>
-                <input type="text" id="logo-text-input" placeholder="Например: CYBER <span>CLUB</span>" autocomplete="off">
-                <button class="spin-btn" style="padding: 11px; font-size: 11px; margin-top: 4px; margin-bottom: 12px;" onclick="applyClubLogoText()">Установить текст логотипа</button>
-
                 <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Фон главной страницы</div>
                 <input type="file" id="bg-file-input" accept="image/*" style="display: none;" onchange="handleBgUpload(event)">
                 <button class="spin-btn" style="padding: 11px; font-size: 11px; margin-bottom: 6px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color);" onclick="document.getElementById('bg-file-input').click()">📁 Загрузить файл фона</button>
@@ -921,12 +872,6 @@
                             caseIconContainer.innerText = settings.caseImage;
                         }
                     }
-                    const logoBox = document.getElementById('header-logo-box');
-                    if (settings.clubLogoImage) {
-                        logoBox.innerHTML = `<img src="${settings.clubLogoImage}" class="club-logo-img" alt="Logo">`;
-                    } else if (settings.clubLogoText) {
-                        logoBox.innerHTML = `<div class="club-logo-text">${settings.clubLogoText}</div>`;
-                    }
                 }
             } catch(e) {}
         })();
@@ -960,24 +905,6 @@
                         caseIconContainer.innerHTML = `<img src="${savedCase}" alt="Case">`;
                     } else {
                         caseIconContainer.innerText = savedCase;
-                    }
-                }
-
-                const savedLogoImg = settings.clubLogoImage;
-                const savedLogoText = settings.clubLogoText;
-                const logoBox = document.getElementById('header-logo-box');
-
-                if (savedLogoImg && savedLogoImg.trim() !== '') {
-                    await preloadImage(savedLogoImg);
-                    logoBox.innerHTML = `<img src="${savedLogoImg}" class="club-logo-img" alt="Logo" onerror="this.outerHTML='<div class=\'club-logo-text\'>CASE <span>LOUNGE</span></div>'">`;
-                } else if (savedLogoText && savedLogoText.trim() !== '') {
-                    logoBox.innerHTML = `<div class="club-logo-text">${savedLogoText}</div>`;
-                } else if (window.APP_CONFIG) {
-                    if (window.APP_CONFIG.clubLogoImage) {
-                        await preloadImage(window.APP_CONFIG.clubLogoImage);
-                        logoBox.innerHTML = `<img src="${window.APP_CONFIG.clubLogoImage}" class="club-logo-img" alt="Logo">`;
-                    } else if (window.APP_CONFIG.clubLogoText) {
-                        logoBox.innerHTML = `<div class="club-logo-text">${window.APP_CONFIG.clubLogoText}</div>`;
                     }
                 }
             } catch (e) {
@@ -1153,7 +1080,7 @@
                 'users': '👥 Игроки',
                 'admins': '🔑 Админы',
                 'logs': '📜 Логи админов',
-                'background': '🖼️ Дизайн и Логотип'
+                'background': '🖼️ Фон и Кейс'
             };
             const titleEl = document.getElementById('current-admin-title');
             if (titleEl && titles[sub]) titleEl.innerText = titles[sub];
@@ -1171,31 +1098,6 @@
             if (sub === 'users') loadAllUsers();
             if (sub === 'admins') loadAdminsList();
             if (sub === 'logs') loadAdminLogs();
-        }
-
-        async function handleLogoUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const base64Image = e.target.result;
-                try {
-                    const res = await fetch('/api/admin/upload-image', {
-                        method: 'POST',
-                        headers: getAuthHeaders(),
-                        body: JSON.stringify({ image: base64Image, filename: file.name })
-                    });
-                    const data = await res.json();
-                    if (data.error) { alert(data.error); return; }
-                    document.getElementById('logo-url-input').value = data.url;
-                    alert('Логотип загружен! Нажмите «Установить логотип-картинку».');
-                } catch (err) {
-                    console.error(err);
-                    alert('Ошибка загрузки файла');
-                }
-            };
-            reader.readAsDataURL(file);
         }
 
         async function handleBgUpload(event) {
@@ -1271,56 +1173,6 @@
                 }
             };
             reader.readAsDataURL(file);
-        }
-
-        async function applyClubLogoImage() {
-            const url = document.getElementById('logo-url-input').value.trim();
-            if (!url) {
-                alert('Введите ссылку или выберите файл логотипа');
-                return;
-            }
-
-            try {
-                await fetch('/api/admin/settings', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ key: 'clubLogoImage', value: url })
-                });
-                await fetch('/api/admin/settings', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ key: 'clubLogoText', value: '' })
-                });
-                alert('Логотип успешно обновлен!');
-                loadAppSettings();
-            } catch (e) {
-                alert('Ошибка: ' + e.message);
-            }
-        }
-
-        async function applyClubLogoText() {
-            const text = document.getElementById('logo-text-input').value.trim();
-            if (!text) {
-                alert('Введите текст логотипа');
-                return;
-            }
-
-            try {
-                await fetch('/api/admin/settings', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ key: 'clubLogoText', value: text })
-                });
-                await fetch('/api/admin/settings', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ key: 'clubLogoImage', value: '' })
-                });
-                alert('Текст логотипа успешно обновлен!');
-                loadAppSettings();
-            } catch (e) {
-                alert('Ошибка: ' + e.message);
-            }
         }
 
         async function applyBackground() {
@@ -1480,7 +1332,6 @@
             const modalCard = document.getElementById('win-modal-card-element');
             const rarityLabel = document.getElementById('win-modal-rarity-label');
 
-            // Проверяем, если предмет выше эпика (например, legendary)
             if (prize.rarity === 'legendary') {
                 modalCard.classList.add('legendary-win');
                 rarityLabel.innerText = '🔥 Легендарный выигрыш!';
@@ -1497,20 +1348,19 @@
         function closeWinModal() {
             document.getElementById('win-modal').style.display = 'none';
             resetCasePreviewState();
-            // Больше не перекидывает в инвентарь автоматически, пользователь остается на странице кейса
+            switchTab('inventory');
         }
 
         async function loadInventory() {
             const listEl = document.getElementById('inventory-list');
-            listEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 20px;">Загрузка инвентаря...</div>';
-
+            listEl.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 20px;">Загрузка инвентаря...</div>`;
             try {
                 const res = await fetch('/api/inventory', { headers: getAuthHeaders() });
                 const data = await res.json();
                 const items = data.items || [];
 
                 if (items.length === 0) {
-                    listEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 30px;">Инвентарь пуст</div>';
+                    listEl.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 20px;">Ваш инвентарь пуст</div>`;
                     return;
                 }
 
@@ -1519,11 +1369,11 @@
                     const card = document.createElement('div');
                     card.className = 'inventory-card';
                     card.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="font-size: 32px; display:flex; align-items:center;">${getIconHtml(item.icon, '36px')}</div>
-                            <div>
-                                <div style="font-weight: 800; font-size: 13px; color: var(--text-main); margin-bottom: 2px;">${item.prize_name}</div>
-                                <div style="font-size: 11px; color: var(--primary); font-weight: 700;">${item.promo}</div>
+                        <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+                            <div style="font-size: 26px; flex-shrink: 0; display:flex; align-items:center;">${getIconHtml(item.icon, '30px')}</div>
+                            <div style="overflow: hidden;">
+                                <div style="font-weight: 700; color: var(--text-main); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.prize_name}</div>
+                                <div style="font-size: 10px; color: var(--primary); font-weight: 700; margin-top: 2px; user-select: text; -webkit-user-select: text;">${item.promo}</div>
                                 <div style="font-size: 9px; color: var(--text-muted); margin-top: 2px;">Удалится через: ${item.hoursLeft}ч</div>
                             </div>
                         </div>
@@ -1532,11 +1382,13 @@
                     listEl.appendChild(card);
                 });
             } catch (e) {
-                listEl.innerHTML = '<div style="text-align: center; color: var(--secondary); font-size: 12px; margin-top: 20px;">Ошибка загрузки</div>';
+                console.error('Load inventory error:', e);
+                listEl.innerHTML = `<div style="text-align: center; color: var(--secondary); font-size: 12px; margin-top: 20px;">Ошибка загрузки</div>`;
             }
         }
 
         async function deleteInventoryItem(itemId) {
+            if (!confirm('Вы уверены, что хотите удалить этот предмет из инвентаря?')) return;
             try {
                 await fetch('/api/inventory/delete', {
                     method: 'POST',
@@ -1551,15 +1403,14 @@
 
         async function loadAdminPrizes() {
             const listEl = document.getElementById('admin-prizes-list');
-            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка призов...</div>';
-
+            listEl.innerHTML = `<div style="text-align:center; color:var(--text-muted);">Загрузка призов...</div>`;
             try {
                 const res = await fetch('/api/admin/prizes', { headers: getAuthHeaders() });
                 const data = await res.json();
                 const prizes = data.prizes || [];
 
                 if (prizes.length === 0) {
-                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Нет призов</div>';
+                    listEl.innerHTML = `<div style="text-align:center; color:var(--text-muted);">Призы не добавлены</div>`;
                     return;
                 }
 
@@ -1568,47 +1419,32 @@
                     const card = document.createElement('div');
                     card.className = 'admin-card';
                     card.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div style="font-size:28px; display:flex; align-items:center;">${getIconHtml(p.icon, '30px')}</div>
-                            <div>
-                                <div style="font-weight:800; color:var(--text-main);">${p.name}</div>
-                                <div style="font-size:10px; color:var(--text-muted);">Шанс (вес):</div>
+                        <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+                            <div style="font-size: 24px; flex-shrink: 0; display:flex; align-items:center;">${getIconHtml(p.icon, '28px')}</div>
+                            <div style="overflow: hidden;">
+                                <div style="font-weight: 700; color: var(--text-main); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name}</div>
+                                <div style="font-size: 9px; color: var(--text-muted);">${p.rarity} | Префикс: ${p.promo_prefix}</div>
                             </div>
                         </div>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <input type="number" value="${p.weight}" id="weight-input-${p.id}" onchange="updatePrizeWeight(${p.id})">
+                        <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                            <input type="number" id="weight-input-${p.id}" value="${p.weight}" onchange="updatePrizeWeight(${p.id})">
                             <button onclick="deletePrize(${p.id})">Удалить</button>
                         </div>
                     `;
                     listEl.appendChild(card);
                 });
             } catch (e) {
-                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки</div>';
-            }
-        }
-
-        async function updatePrizeWeight(prizeId) {
-            const input = document.getElementById(`weight-input-${prizeId}`);
-            if (!input) return;
-            const weight = Number(input.value);
-
-            try {
-                await fetch('/api/admin/update-prize', {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ prizeId, weight })
-                });
-            } catch (e) {
-                alert('Ошибка обновления шанса');
+                console.error(e);
+                listEl.innerHTML = `<div style="text-align:center; color:var(--secondary);">Ошибка загрузки призов</div>`;
             }
         }
 
         async function addPrize() {
             const name = document.getElementById('new-name').value.trim();
             const icon = document.getElementById('new-icon').value.trim();
-            const rarity = document.getElementById('new-rarity').value.trim() || 'common';
-            const weight = Number(document.getElementById('new-weight').value) || 1;
-            const promo_prefix = document.getElementById('new-promo').value.trim() || 'CYBER';
+            const rarity = document.getElementById('new-rarity').value.trim();
+            const weight = document.getElementById('new-weight').value.trim();
+            const promo_prefix = document.getElementById('new-promo').value.trim();
 
             if (!name) {
                 alert('Введите название приза');
@@ -1629,11 +1465,12 @@
                 document.getElementById('new-rarity').value = '';
                 document.getElementById('new-weight').value = '';
                 document.getElementById('new-promo').value = '';
+                document.getElementById('prize-file-input').value = '';
 
                 alert('Приз успешно добавлен!');
                 switchAdminSub('prizes');
             } catch (e) {
-                alert('Ошибка при добавлении приза');
+                alert('Ошибка: ' + e.message);
             }
         }
 
@@ -1651,20 +1488,34 @@
             }
         }
 
+        async function updatePrizeWeight(prizeId) {
+            const input = document.getElementById(`weight-input-${prizeId}`);
+            if (!input) return;
+            const weight = Number(input.value);
+            try {
+                await fetch('/api/admin/update-prize', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ prizeId, weight })
+                });
+            } catch (e) {
+                console.error('Update weight error:', e);
+            }
+        }
+
         async function loadStats() {
-            const statsContainer = document.getElementById('stats-content');
+            const content = document.getElementById('stats-content');
             try {
                 const res = await fetch('/api/admin/stats', { headers: getAuthHeaders() });
-                const stats = await res.json();
-                if (stats.error) return;
+                const data = await res.json();
 
-                statsContainer.innerHTML = `
+                content.innerHTML = `
                     <div class="stat-card">
                         <div class="stat-card-info">
                             <div class="stat-icon">👥</div>
                             <div>
-                                <div class="stat-title">Всего игроков</div>
-                                <div class="stat-value">${stats.totalUsers}</div>
+                                <div class="stat-title">Всего пользователей</div>
+                                <div class="stat-value">${data.totalUsers}</div>
                             </div>
                         </div>
                     </div>
@@ -1673,16 +1524,16 @@
                             <div class="stat-icon">🛡️</div>
                             <div>
                                 <div class="stat-title">Заблокировано</div>
-                                <div class="stat-value">${stats.bannedUsers}</div>
+                                <div class="stat-value">${data.bannedUsers}</div>
                             </div>
                         </div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-card-info">
-                            <div class="stat-icon">🎁</div>
+                            <div class="stat-icon">📦</div>
                             <div>
-                                <div class="stat-title">Всего открытий кейса</div>
-                                <div class="stat-value">${stats.totalSpins}</div>
+                                <div class="stat-title">Всего открытий</div>
+                                <div class="stat-value">${data.totalSpins}</div>
                             </div>
                         </div>
                     </div>
@@ -1690,49 +1541,49 @@
                         <div class="stat-card-info">
                             <div class="stat-icon">📈</div>
                             <div>
-                                <div class="stat-title">Открытий сегодня</div>
-                                <div class="stat-value">${stats.todaySpins}</div>
+                                <div class="stat-title">Открытий за сегодня</div>
+                                <div class="stat-value">${data.todaySpins}</div>
                             </div>
                         </div>
                     </div>
                 `;
             } catch (e) {
-                console.error('Stats update error:', e);
+                console.error(e);
             }
         }
 
         async function loadBannedUsers() {
-            const listEl = document.getElementById('banned-users-list');
-            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка...</div>';
+            const list = document.getElementById('banned-users-list');
+            list.innerHTML = `<div style="text-align:center; color:var(--text-muted);">Загрузка...</div>`;
             try {
                 const res = await fetch('/api/admin/banned-list', { headers: getAuthHeaders() });
                 const data = await res.json();
                 const users = data.bannedUsers || [];
 
                 if (users.length === 0) {
-                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Нет заблокированных пользователей</div>';
+                    list.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:12px;">Нет заблокированных пользователей</div>`;
                     return;
                 }
 
-                listEl.innerHTML = '';
+                list.innerHTML = '';
                 users.forEach(u => {
                     const card = document.createElement('div');
                     card.className = 'admin-card';
                     card.innerHTML = `
-                        <div style="font-weight:700; color:var(--text-main);">${formatUserDisplay(u.username, u.id)}</div>
+                        <div style="font-weight: 700; color: var(--text-main); font-size: 12px;">${formatUserDisplay(u.username, u.id)}</div>
                         <button onclick="quickUnban('${u.id}')">Разблокировать</button>
                     `;
-                    listEl.appendChild(card);
+                    list.appendChild(card);
                 });
             } catch (e) {
-                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки</div>';
+                console.error(e);
             }
         }
 
-        async function setBanStatus(state) {
-            const input = document.getElementById('ban-username').value.trim();
-            if (!input) {
-                alert('Введите юзернейм или ID пользователя');
+        async function setBanStatus(banState) {
+            const targetIdentifier = document.getElementById('ban-username').value.trim();
+            if (!targetIdentifier) {
+                alert('Введите юзернейм или ID');
                 return;
             }
 
@@ -1740,35 +1591,35 @@
                 const res = await fetch('/api/admin/ban', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier: input, banState: state })
+                    body: JSON.stringify({ targetIdentifier, banState })
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
-                alert('Статус бана успешно обновлен!');
+                alert(banState === 1 ? 'Пользователь заблокирован' : 'Пользователь разблокирован');
                 document.getElementById('ban-username').value = '';
                 loadBannedUsers();
             } catch (e) {
-                alert('Ошибка при изменении статуса бана');
+                alert('Ошибка: ' + e.message);
             }
         }
 
-        async function quickUnban(targetId) {
+        async function quickUnban(targetIdentifier) {
             try {
                 await fetch('/api/admin/ban', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier: targetId, banState: 0 })
+                    body: JSON.stringify({ targetIdentifier, banState: 0 })
                 });
                 loadBannedUsers();
             } catch (e) {
-                alert('Ошибка разбана');
+                alert('Ошибка');
             }
         }
 
         async function resetTimer() {
-            const input = document.getElementById('ban-username').value.trim();
-            if (!input) {
-                alert('Введите юзернейм или ID пользователя');
+            const targetIdentifier = document.getElementById('ban-username').value.trim();
+            if (!targetIdentifier) {
+                alert('Введите юзернейм или ID');
                 return;
             }
 
@@ -1776,115 +1627,124 @@
                 const res = await fetch('/api/admin/reset-timer', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier: input })
+                    body: JSON.stringify({ targetIdentifier })
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
                 alert('Таймер успешно сброшен!');
                 document.getElementById('ban-username').value = '';
             } catch (e) {
-                alert('Ошибка при сбросе таймера');
+                alert('Ошибка: ' + e.message);
             }
         }
 
         async function loadAllUsers() {
-            const listEl = document.getElementById('all-users-list');
-            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка игроков...</div>';
+            const list = document.getElementById('all-users-list');
+            list.innerHTML = `<div style="text-align:center; color:var(--text-muted);">Загрузка...</div>`;
             try {
                 const res = await fetch('/api/admin/users-list', { headers: getAuthHeaders() });
                 const data = await res.json();
                 const users = data.users || [];
 
                 if (users.length === 0) {
-                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Нет игроков</div>';
+                    list.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:12px;">Нет игроков</div>`;
                     return;
                 }
 
-                listEl.innerHTML = '';
+                list.innerHTML = '';
                 users.forEach(u => {
+                    const identifier = u.username ? `@${u.username}` : u.id;
                     const card = document.createElement('div');
                     card.className = 'admin-card';
-                    card.style.position = 'relative';
+                    card.style.overflow = 'visible';
                     card.innerHTML = `
-                        <div style="font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:8px;">
-                            ${formatUserDisplay(u.username, u.id)}
-                            ${u.is_banned === 1 ? '<span style="font-size:10px; color:var(--secondary); background:rgba(224,83,83,0.1); padding:2px 6px; border-radius:6px;">Забан</span>' : ''}
+                        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 170px;">
+                            <div style="font-weight: 700; color: var(--text-main); font-size: 12px;">${formatUserDisplay(u.username, u.id)}</div>
+                            <div style="font-size: 9px; color: ${u.is_banned ? 'var(--secondary)' : 'var(--text-muted)'};">${u.is_banned ? 'Заблокирован' : 'Активен'}</div>
                         </div>
-                        <div class="user-menu-wrap" style="position:relative;">
-                            <button class="admin-dots-btn" onclick="toggleUserMenu(event, '${u.id}')">⋮</button>
+                        <div class="user-menu-wrap" style="position: relative;">
+                            <button class="admin-dots-btn" onclick="toggleUserMenu(event, '${u.id}')" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); width: 32px; height: 32px; border-radius: 8px;">⋮</button>
                             <div class="user-dropdown-menu" id="user-menu-${u.id}">
-                                <button class="admin-dropdown-item" onclick="adminActionUser('${u.id}', 'ban', ${u.is_banned === 1 ? 0 : 1})">${u.is_banned === 1 ? '🛡️ Разбанить' : '🛡️ Заблокировать'}</button>
-                                <button class="admin-dropdown-item" onclick="adminActionUser('${u.id}', 'timer', 0)">⏳ Сбросить таймер</button>
-                                <button class="admin-dropdown-item" onclick="adminActionUser('${u.id}', 'delete', 0)" style="color:var(--secondary);">🗑️ Удалить игрока</button>
+                                <button class="admin-dropdown-item" onclick="userActionBan('${identifier}', ${u.is_banned ? 0 : 1})">${u.is_banned ? '🟢 Разбанить' : '🔴 Забанить'}</button>
+                                <button class="admin-dropdown-item" onclick="userActionReset('${identifier}')">⏱️ Сбросить таймер</button>
+                                <button class="admin-dropdown-item" onclick="userActionDelete('${identifier}')" style="color: var(--secondary);">🗑️ Удалить игрока</button>
                             </div>
                         </div>
                     `;
-                    listEl.appendChild(card);
+                    list.appendChild(card);
                 });
             } catch (e) {
-                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки</div>';
+                console.error(e);
             }
         }
 
-        async function adminActionUser(targetId, actionType, value) {
+        async function userActionBan(identifier, state) {
             try {
-                if (actionType === 'ban') {
-                    await fetch('/api/admin/ban', {
-                        method: 'POST',
-                        headers: getAuthHeaders(),
-                        body: JSON.stringify({ targetIdentifier: targetId, banState: value })
-                    });
-                    loadAllUsers();
-                } else if (actionType === 'timer') {
-                    await fetch('/api/admin/reset-timer', {
-                        method: 'POST',
-                        headers: getAuthHeaders(),
-                        body: JSON.stringify({ targetIdentifier: targetId })
-                    });
-                    alert('Таймер сброшен!');
-                } else if (actionType === 'delete') {
-                    if (!confirm('Удалить этого игрока и его инвентарь?')) return;
-                    await fetch('/api/admin/delete-user', {
-                        method: 'POST',
-                        headers: getAuthHeaders(),
-                        body: JSON.stringify({ targetIdentifier: targetId })
-                    });
-                    loadAllUsers();
-                }
-            } catch (e) {
-                alert('Ошибка выполнения действия');
-            }
+                await fetch('/api/admin/ban', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier: identifier, banState: state })
+                });
+                loadAllUsers();
+            } catch(e) { alert('Ошибка'); }
+        }
+
+        async function userActionReset(identifier) {
+            try {
+                await fetch('/api/admin/reset-timer', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier: identifier })
+                });
+                alert('Таймер сброшен!');
+                loadAllUsers();
+            } catch(e) { alert('Ошибка'); }
+        }
+
+        async function userActionDelete(identifier) {
+            if (!confirm(`Удалить игрока ${identifier}?`)) return;
+            try {
+                const res = await fetch('/api/admin/delete-user', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ targetIdentifier: identifier })
+                });
+                const data = await res.json();
+                if (data.error) { alert(data.error); return; }
+                loadAllUsers();
+            } catch(e) { alert('Ошибка'); }
         }
 
         async function loadAdminsList() {
-            const listEl = document.getElementById('admins-list-container');
-            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка админов...</div>';
+            const container = document.getElementById('admins-list-container');
+            container.innerHTML = `<div style="text-align:center; color:var(--text-muted);">Загрузка...</div>`;
             try {
                 const res = await fetch('/api/admin/list', { headers: getAuthHeaders() });
                 const data = await res.json();
                 const admins = data.admins || [];
 
-                listEl.innerHTML = '';
+                container.innerHTML = '';
                 admins.forEach(a => {
+                    const isMain = (a.username === 'ropogku' || a.is_super === 1);
                     const card = document.createElement('div');
                     card.className = 'admin-card';
                     card.innerHTML = `
-                        <div>
-                            <div style="font-weight:700; color:var(--text-main);">${formatUserDisplay(a.username, a.id)}</div>
-                            <div style="font-size:10px; color:var(--primary); margin-top:2px;">${a.is_super === 1 ? 'Главный администратор' : 'Администратор'}</div>
+                        <div style="overflow: hidden;">
+                            <div style="font-weight: 700; color: var(--text-main); font-size: 12px;">${formatUserDisplay(a.username, a.id)}</div>
+                            <div style="font-size: 9px; color: ${a.is_super ? 'var(--primary)' : 'var(--text-muted)'};">${a.is_super ? 'Супер-админ' : 'Администратор'}</div>
                         </div>
-                        ${(isSuperAdmin && a.is_super !== 1) ? `<button onclick="removeAdmin('${a.id}')">Снять</button>` : ''}
+                        ${isMain || !isSuperAdmin ? '' : `<button onclick="removeAdmin('${a.id}')">Снять</button>`}
                     `;
-                    listEl.appendChild(card);
+                    container.appendChild(card);
                 });
             } catch (e) {
-                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки</div>';
+                console.error(e);
             }
         }
 
         async function addNewAdmin() {
-            const input = document.getElementById('new-admin-username').value.trim();
-            if (!input) {
+            const targetIdentifier = document.getElementById('new-admin-username').value.trim();
+            if (!targetIdentifier) {
                 alert('Введите юзернейм или ID');
                 return;
             }
@@ -1893,7 +1753,7 @@
                 const res = await fetch('/api/admin/add-admin', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier: input })
+                    body: JSON.stringify({ targetIdentifier })
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
@@ -1901,63 +1761,62 @@
                 document.getElementById('new-admin-username').value = '';
                 loadAdminsList();
             } catch (e) {
-                alert('Ошибка назначения админа');
+                alert('Ошибка: ' + e.message);
             }
         }
 
-        async function removeAdmin(targetId) {
-            if (!confirm('Снять этого администратора?')) return;
+        async function removeAdmin(targetIdentifier) {
+            if (!confirm('Снять с должности администратора?')) return;
             try {
                 const res = await fetch('/api/admin/remove-admin', {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({ targetIdentifier: targetId })
+                    body: JSON.stringify({ targetIdentifier })
                 });
                 const data = await res.json();
                 if (data.error) { alert(data.error); return; }
                 loadAdminsList();
             } catch (e) {
-                alert('Ошибка снятия админа');
+                alert('Ошибка: ' + e.message);
             }
         }
 
         async function loadAdminLogs() {
-            const listEl = document.getElementById('admin-logs-list');
-            listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted);">Загрузка логов...</div>';
+            const list = document.getElementById('admin-logs-list');
+            list.innerHTML = `<div style="text-align:center; color:var(--text-muted);">Загрузка логов...</div>`;
             try {
                 const res = await fetch('/api/admin/logs', { headers: getAuthHeaders() });
                 const data = await res.json();
                 if (data.error) {
-                    listEl.innerHTML = `<div style="text-align:center; color:var(--secondary); font-size:12px;">${data.error}</div>`;
+                    list.innerHTML = `<div style="text-align:center; color:var(--secondary); font-size:12px;">${data.error}</div>`;
                     return;
                 }
                 const logs = data.logs || [];
                 if (logs.length === 0) {
-                    listEl.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Нет логов</div>';
+                    list.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:12px;">Логи пусты</div>`;
                     return;
                 }
 
-                listEl.innerHTML = '';
+                list.innerHTML = '';
                 logs.forEach(l => {
+                    const dateStr = new Date(l.created_at).toLocaleString('ru-RU');
                     const card = document.createElement('div');
                     card.className = 'admin-card';
                     card.style.flexDirection = 'column';
                     card.style.alignItems = 'flex-start';
                     card.style.gap = '4px';
-                    
-                    const dateStr = new Date(l.created_at).toLocaleString();
                     card.innerHTML = `
-                        <div style="display:flex; justify-content:space-width; width:100%; justify-content: space-between;">
+                        <div style="display:flex; justify-content:space-width; width:100%; justify-content:space-between;">
                             <span style="font-weight:700; color:var(--primary); font-size:11px;">@${l.admin_username}</span>
                             <span style="font-size:9px; color:var(--text-muted);">${dateStr}</span>
                         </div>
-                        <div style="font-weight:700; color:var(--text-main); font-size:11px;">[${l.action}]</div>
-                        <div style="font-size:11px; color:var(--text-muted); word-break:break-all;">${l.details}</div>
+                        <div style="font-size:11px; color:var(--text-main); font-weight:600;">[${l.action}]</div>
+                        <div style="font-size:10px; color:var(--text-muted); word-break: break-all;">${l.details}</div>
                     `;
-                    listEl.appendChild(card);
+                    list.appendChild(card);
                 });
             } catch (e) {
-                listEl.innerHTML = '<div style="text-align:center; color:var(--secondary);">Ошибка загрузки логов</div>';
+                console.error(e);
             }
         }
     </script>
