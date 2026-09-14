@@ -17,7 +17,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-const BOT_TOKEN = process.env.BOT_TOKEN || '8858536573:AAEMimZ3ynfL9Z_4IJT-57JOlcecACWmye4';
+const BOT_TOKEN = process.env.BOT_TOKEN || '8937545153:AAF5PBy7JGX9-Ry9RJGiog_-O0r2glpeSKo';
 
 const db = createClient({
   url: process.env.TURSO_DATABASE_URL || 'file:local.db',
