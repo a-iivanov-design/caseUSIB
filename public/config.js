@@ -1,6 +1,4 @@
 window.APP_CONFIG = {
-    clubLogoImage: "", 
-    clubLogoText: "", 
     caseImage: "📦", 
     homeBackground: "", 
     primaryColor: "#D4A373",
